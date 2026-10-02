@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS slots (
+CREATE TABLE slots (
     slot BIGINT PRIMARY KEY,
     parent BIGINT,
     status TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS transactions (
+CREATE TABLE transactions (
     signature TEXT PRIMARY KEY,
     slot BIGINT NOT NULL,
     tx_index BIGINT NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     fee BIGINT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS accounts (
+CREATE TABLE accounts (
     pubkey TEXT PRIMARY KEY,
     owner TEXT NOT NULL,
     lamports BIGINT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     write_version BIGINT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS block_meta (
+CREATE TABLE block_meta (
     slot BIGINT PRIMARY KEY,
     blockhash TEXT NOT NULL,
     parent_slot BIGINT NOT NULL,
@@ -32,3 +32,9 @@ CREATE TABLE IF NOT EXISTS block_meta (
     tx_count BIGINT NOT NULL,
     block_height BIGINT
 );
+
+CREATE INDEX idx_transactions_slot
+    ON transactions(slot);
+
+CREATE INDEX idx_accounts_owner
+    ON accounts(owner);

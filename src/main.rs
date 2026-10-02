@@ -3,6 +3,7 @@ mod database;
 mod helpers;
 mod normalization;
 mod pipeline;
+mod store;
 
 use crate::connection::client::grpc_connect;
 use crate::database::db::database_connect;
@@ -11,9 +12,9 @@ use std::collections::HashMap;
 use tokio::sync::mpsc;
 
 use yellowstone_grpc_proto::geyser::{
-    SubscribeRequest, SubscribeRequestFilterAccounts, SubscribeRequestFilterBlocks,
+    SubscribeRequest, SubscribeRequestFilterAccounts, 
     SubscribeRequestFilterBlocksMeta, SubscribeRequestFilterSlots,
-    SubscribeRequestFilterTransactions, subscribe_update::UpdateOneof,
+    SubscribeRequestFilterTransactions,
 };
 
 #[tokio::main]
@@ -22,9 +23,12 @@ async fn main() {
     let pool = match database_connect().await {
         Ok(val) => val,
         Err(err) => {
-            panic!("ERROR")
+            panic!("ERROR : {:?}",err)
         }
     };
+
+    database::tables::run_migrations(&pool).await.expect("Migration Failed");
+
 
     let (tx, mut rx) = mpsc::channel(20);
     let (mut subscribe_tx, mut stream) = client.subscribe().await.unwrap();
@@ -70,7 +74,7 @@ async fn main() {
     subscribe_tx.send(request).await.unwrap();
 
     let producer = tokio::spawn(pipeline::ingest(stream, tx));
-    let consumer = tokio::spawn(pipeline::process(rx));
+    let consumer = tokio::spawn(pipeline::process(rx,pool));
 
     tokio::join!(producer, consumer);
 }
