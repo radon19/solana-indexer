@@ -1,0 +1,25 @@
+# Rust build artifacts
+/target/
+
+
+# VS Code
+.vscode/
+
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Local database / temporary files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS / editor temporary files
+*.swp
+*.swo
+*~

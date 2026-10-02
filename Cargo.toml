@@ -1,0 +1,13 @@
+[package]
+name = "solana-indexer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bs58 = "0.5.1"
+dotenvy = "0.15.7"
+futures = "0.3.34"
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "full"] }
+yellowstone-grpc-client = "8"
+yellowstone-grpc-proto = "8"
