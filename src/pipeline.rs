@@ -1,7 +1,8 @@
 use futures::{Stream, StreamExt};
+use sqlx::PgPool;
 use yellowstone_grpc_proto::{geyser::{SubscribeUpdate, subscribe_update::UpdateOneof}, tonic::Status};
 
-use crate::{helpers, normalization::structs::Ingester};
+use crate::{helpers, normalization::structs::Ingester, store};
 
 
 pub async  fn ingest(
@@ -42,23 +43,34 @@ tokio::pin!(stream);
 }
 
 
-pub async  fn process(mut rx: tokio::sync::mpsc::Receiver<Ingester>) {
+pub async fn process(
+    mut rx: tokio::sync::mpsc::Receiver<Ingester>,
+    pool: PgPool,
+) {
     while let Some(data) = rx.recv().await {
         match data {
             Ingester::Slot(slot) => {
-                println!("slot: {}", slot.slot);
+                if let Err(err) = store::slots::store_slot(&pool, slot).await {
+                    eprintln!("Slot store error: {err}");
+                }
             }
 
             Ingester::Transaction(txn) => {
-                println!("txn: {}", txn.signature);
+                if let Err(err) = store::txns::store_transaction(&pool, txn).await {
+                    eprintln!("Transaction store error: {err}");
+                }
             }
 
             Ingester::Account(account) => {
-                println!("account: {}", account.pubkey);
+                if let Err(err) = store::accounts::store_account(&pool, account).await {
+                    eprintln!("Account store error: {err}");
+                }
             }
 
             Ingester::BlockMeta(block) => {
-                println!("block: {}", block.slot);
+                if let Err(err) = store::block_meta::store_block_meta(&pool, block).await {
+                    eprintln!("Block meta store error: {err}");
+                }
             }
         }
     }
