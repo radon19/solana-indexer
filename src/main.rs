@@ -49,11 +49,11 @@ async fn main() {
             },
         )]),
 
-        // All transactions, including vote and failed transactions
+        // All non-vote transactions, including successful and failed transactions
         transactions: HashMap::from([(
             "transactions".to_string(),
             SubscribeRequestFilterTransactions {
-                vote: None,
+                vote: Some(false),
                 failed: None,
                 ..Default::default()
             },

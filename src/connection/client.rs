@@ -5,7 +5,9 @@ pub async fn grpc_connect() -> GeyserGrpcClient<impl Interceptor> {
     // Extracting url from env
     dotenvy::dotenv().ok();
     let helper = Config::from_env();
-    let url = helper.geyser_local_url;
+    let url = helper.geyser_url;
+    let x_token = helper.geyser_api_key;
+
 
     let mut tries = 10;
 
@@ -13,7 +15,8 @@ pub async fn grpc_connect() -> GeyserGrpcClient<impl Interceptor> {
         println!("Connecting to gRPC...");
         let builder =
             GeyserGrpcClient::build_from_shared(url.clone())
-            .expect("Invalid URL");
+            .expect("Invalid URL").x_token(Some(x_token.clone()))
+            .unwrap();
 
         match builder.connect().await {
             Ok(client) => {
