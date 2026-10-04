@@ -73,8 +73,8 @@ async fn main() {
 
     subscribe_tx.send(request).await.unwrap();
 
-    let producer = tokio::spawn(pipeline::ingest(stream, tx));
-    let consumer = tokio::spawn(pipeline::process(rx,pool));
+    let producer = tokio::spawn(pipeline::ingester::ingest(stream, tx));
+    let consumer = tokio::spawn(pipeline::processer::process(rx,pool));
 
     tokio::join!(producer, consumer);
 }
