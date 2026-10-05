@@ -1,7 +1,7 @@
 use super::config::Config;
-use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
+use yellowstone_grpc_client::{GeyserGrpcClient,};
 
-pub async fn grpc_connect() -> GeyserGrpcClient<impl Interceptor> {
+pub async fn grpc_connect() -> GeyserGrpcClient<> {
     // Extracting url from env
     dotenvy::dotenv().ok();
     let helper = Config::from_env();

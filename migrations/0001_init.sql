@@ -4,15 +4,6 @@ CREATE TABLE slots (
     status TEXT NOT NULL
 );
 
-CREATE TABLE transactions (
-    signature TEXT PRIMARY KEY,
-    slot BIGINT NOT NULL,
-    tx_index BIGINT NOT NULL,
-    is_vote BOOLEAN NOT NULL,
-    success BOOLEAN NOT NULL,
-    fee BIGINT NOT NULL
-);
-
 CREATE TABLE accounts (
     pubkey TEXT PRIMARY KEY,
     owner TEXT NOT NULL,
@@ -33,8 +24,3 @@ CREATE TABLE block_meta (
     block_height BIGINT
 );
 
-CREATE INDEX idx_transactions_slot
-    ON transactions(slot);
-
-CREATE INDEX idx_accounts_owner
-    ON accounts(owner);
