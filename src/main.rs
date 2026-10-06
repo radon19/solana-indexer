@@ -4,6 +4,7 @@ mod helpers;
 mod normalization;
 mod pipeline;
 mod store;
+mod parsers;
 
 use crate::connection::client::grpc_connect;
 use crate::database::db::database_connect;

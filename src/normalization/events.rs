@@ -1,0 +1,140 @@
+#[derive(Debug, Clone)]
+pub enum Event {
+    Swap(SwapEvent),
+    Trade(TradeEvent),
+    Transfer(TransferEvent),
+    LiquidityAdd(LiquidityAddEvent),
+    LiquidityRemove(LiquidityRemoveEvent),
+    PoolCreate(PoolCreateEvent),
+}
+
+// --------------------------------------------------
+// Generic Swap
+// Jupiter / Raydium / Orca / Meteora / PumpSwap
+// --------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct SwapEvent {
+    pub signature: String,
+    pub slot: u64,
+
+    pub user: String,
+
+    // Actual execution protocol
+    // Example: Raydium
+    pub protocol: String,
+
+    // Aggregator, if any
+    // Example: Some("Jupiter")
+    pub aggregator: Option<String>,
+
+    pub input_mint: String,
+    pub input_amount: u64,
+
+    pub output_mint: String,
+    pub output_amount: u64,
+}
+
+// --------------------------------------------------
+// Pump.fun / PumpSwap Trade
+// --------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct TradeEvent {
+    pub signature: String,
+    pub slot: u64,
+
+    pub user: String,
+
+    pub protocol: String,
+
+    pub mint: String,
+
+    pub side: TradeSide,
+
+    pub token_amount: u64,
+    pub sol_amount: u64,
+}
+
+#[derive(Debug, Clone)]
+pub enum TradeSide {
+    Buy,
+    Sell,
+}
+
+// --------------------------------------------------
+// Token transfer
+// --------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct TransferEvent {
+    pub signature: String,
+    pub slot: u64,
+
+    pub source: String,
+    pub destination: String,
+
+    pub mint: String,
+    pub amount: u64,
+}
+
+// --------------------------------------------------
+// Add liquidity
+// --------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct LiquidityAddEvent {
+    pub signature: String,
+    pub slot: u64,
+
+    pub user: String,
+
+    pub protocol: String,
+
+    pub pool: String,
+
+    pub token_a_mint: String,
+    pub token_a_amount: u64,
+
+    pub token_b_mint: String,
+    pub token_b_amount: u64,
+}
+
+// --------------------------------------------------
+// Remove liquidity
+// --------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct LiquidityRemoveEvent {
+    pub signature: String,
+    pub slot: u64,
+
+    pub user: String,
+
+    pub protocol: String,
+
+    pub pool: String,
+
+    pub token_a_mint: String,
+    pub token_a_amount: u64,
+
+    pub token_b_mint: String,
+    pub token_b_amount: u64,
+}
+
+// --------------------------------------------------
+// Pool creation
+// --------------------------------------------------
+
+#[derive(Debug, Clone)]
+pub struct PoolCreateEvent {
+    pub signature: String,
+    pub slot: u64,
+
+    pub protocol: String,
+
+    pub pool: String,
+
+    pub token_a_mint: String,
+    pub token_b_mint: String,
+}
