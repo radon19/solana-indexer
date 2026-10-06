@@ -18,7 +18,6 @@ pub async fn store_transaction(
     .bind(txn.signature)
     .bind(txn.slot as i64)
     .bind(txn.index as i64)
-    .bind(txn.is_vote)
     .bind(txn.success)
     .bind(txn.fee as i64)
     .execute(pool)
