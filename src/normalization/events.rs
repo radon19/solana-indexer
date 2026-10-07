@@ -22,7 +22,7 @@ pub struct SwapEvent {
 
     // Actual execution protocol
     // Example: Raydium
-    pub protocol: String,
+    pub protocol: Protocol,
 
     // Aggregator, if any
     // Example: Some("Jupiter")
@@ -46,7 +46,7 @@ pub struct TradeEvent {
 
     pub user: String,
 
-    pub protocol: String,
+    pub protocol: Protocol,
 
     pub mint: String,
 
@@ -89,7 +89,7 @@ pub struct LiquidityAddEvent {
 
     pub user: String,
 
-    pub protocol: String,
+    pub protocol: Protocol,
 
     pub pool: String,
 
@@ -111,7 +111,7 @@ pub struct LiquidityRemoveEvent {
 
     pub user: String,
 
-    pub protocol: String,
+    pub protocol: Protocol,
 
     pub pool: String,
 
@@ -131,10 +131,33 @@ pub struct PoolCreateEvent {
     pub signature: String,
     pub slot: u64,
 
-    pub protocol: String,
+    pub protocol: Protocol,
 
     pub pool: String,
 
     pub token_a_mint: String,
     pub token_b_mint: String,
+}
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Protocol {
+    Jupiter,
+    PumpFun,
+    Raydium,
+    Orca,
+    Meteora,
+}
+
+impl Protocol {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Protocol::Jupiter => "Jupiter",
+            Protocol::PumpFun => "Pump.fun",
+            Protocol::Raydium => "Raydium",
+            Protocol::Orca => "Orca",
+            Protocol::Meteora => "Meteora",
+        }
+    }
 }
