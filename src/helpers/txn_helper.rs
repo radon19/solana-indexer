@@ -1,8 +1,8 @@
 use yellowstone_grpc_proto::geyser::SubscribeUpdateTransaction;
 
 use crate::normalization::structs::{
-    Ingester, InnerInstruction, InnerInstructions, Instruction, LoadedAddresses, 
-    TokenBalance, Transaction,
+    Ingester, InnerInstruction, InnerInstructions, Instruction, LoadedAddresses, TokenBalance,
+    Transaction,
 };
 
 pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
@@ -44,12 +44,11 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
         .iter()
         .enumerate()
         .map(|(i, ix)| {
-            let program_id = resolved_keys[ix.program_id_index as usize].clone();
-            let accounts = ix
-                .accounts
-                .iter()
-                .map(|account_index| resolved_keys[*account_index as usize].clone())
-                .collect();
+            let program_id = resolved_keys
+                .get(ix.program_id_index as usize)
+                .cloned()
+                .unwrap_or_default();
+            let accounts = resolve_accounts(&ix.accounts, &resolved_keys);
             Instruction {
                 index: i as u32,
                 program_id,
@@ -68,13 +67,12 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                 .iter()
                 .enumerate()
                 .map(|(i, ix)| {
-                    let program_id = resolved_keys[ix.program_id_index as usize].clone();
+                    let program_id = resolved_keys
+                        .get(ix.program_id_index as usize)
+                        .cloned()
+                        .unwrap_or_default();
 
-                    let accounts: Vec<String> = ix
-                        .accounts
-                        .iter()
-                        .map(|account_index| resolved_keys[*account_index as usize].clone())
-                        .collect();
+                    let accounts = resolve_accounts(&ix.accounts, &resolved_keys);
 
                     InnerInstruction {
                         index: i as u32,
@@ -112,7 +110,7 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                     Some(balance.owner.clone())
                 },
 
-                amount: ui.amount.parse::<u64>().unwrap(),
+                amount: ui.amount.parse::<u64>().unwrap_or(0),
                 decimals: ui.decimals as u8,
                 program_id: balance.program_id.clone(),
             }
@@ -142,7 +140,7 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                     Some(balance.owner.clone())
                 },
 
-                amount: ui.amount.parse::<u64>().unwrap(),
+                amount: ui.amount.parse::<u64>().unwrap_or(0),
                 decimals: ui.decimals as u8,
                 program_id: balance.program_id.clone(),
             }
@@ -155,11 +153,7 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
         signature: bs58::encode(info.signature).into_string(),
         slot: txn.slot,
         index: info.index,
-        account_keys: message
-            .account_keys
-            .iter()
-            .map(|x| bs58::encode(x).into_string())
-            .collect(),
+        account_keys: resolved_keys,
         instructions: instruction,
         inner_instructions: inner_instruction,
         pre_balances: meta.pre_balances,
@@ -176,4 +170,12 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
     };
 
     Ingester::Transaction(temp)
+}
+
+fn resolve_accounts(packed: &[u8], keys: &[String]) -> Vec<String> {
+    packed
+        .chunks_exact(4)
+        .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+        .filter_map(|i| keys.get(i as usize).cloned())
+        .collect()
 }
