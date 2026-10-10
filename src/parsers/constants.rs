@@ -1,8 +1,4 @@
 // Shared constants only.
-//
-// Anything that would collide with another protocol's name (SWAP,
-// INITIALIZE_POOL, ADD_LIQUIDITY, ...) lives in that protocol's own folder
-// under src/parsers/, not here.
 
 pub mod pumpfun {
     // Bonding curve: token launch, not a DEX. Needs its own parser.
@@ -14,7 +10,7 @@ pub mod pumpfun {
 }
 
 pub mod jupiter {
-    // v6 aggregator. The venue swap is in inner_instructions, not here.
+    // v6 aggregator
     pub const AGGREGATOR_V6: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
     pub const LIMIT_ORDER_V2: &str = "j1o2qRpjcyUwEvwtcfhEQefh773ZgjxcVRry7LDqg5X";
     pub const RFQ_ORDER_ENGINE: &str = "61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH";
@@ -33,7 +29,6 @@ pub mod raydium {
 pub mod orca {
     pub const WHIRLPOOL: &str = "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc";
     pub const TOKEN_SWAP_V2: &str = "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP";
-    // Corrected: this was "...CUU8rNj..." before, which never matched anything.
     pub const V1: &str = "DjVE6JNiYqPL2QXyCUUh8rNjHrbz9hXHNYt99MQ59qw1";
 }
 

@@ -9,8 +9,7 @@ pub fn route(tx: &Transaction) -> Vec<Event> {
 
     for ix in &tx.instructions {
         let protocol = match ix.program_id.as_str() {
-            constants::jupiter::AGGREGATOR_V6
-            | constants::jupiter::RFQ_V2 => Some(Protocol::Jupiter),
+            constants::jupiter::AGGREGATOR_V6 => Some(Protocol::Jupiter),
 
             constants::pumpfun::BONDING_CURVE
             | constants::pumpfun::AMM => Some(Protocol::PumpFun),
@@ -37,11 +36,11 @@ pub fn route(tx: &Transaction) -> Vec<Event> {
         };
 
         let mut parsed = match protocol {
-            Protocol::Jupiter => parsers::jupiter_parser::parse(tx, ix),
-            Protocol::PumpFun => parsers::jupiter_parser::parse(tx, ix),
-            Protocol::Raydium => parsers::jupiter_parser::parse(tx, ix),
-            Protocol::Orca => parsers::jupiter_parser::parse(tx, ix),
-            Protocol::Meteora => parsers::jupiter_parser::parse(tx, ix),
+            Protocol::Jupiter => parsers::jupiter::jup_parser::parse(tx, ix),
+            Protocol::PumpFun => parsers::jupiter::jup_parser::parse(tx, ix),
+            Protocol::Raydium => parsers::jupiter::jup_parser::parse(tx, ix),
+            Protocol::Orca => parsers::jupiter::jup_parser::parse(tx, ix),
+            Protocol::Meteora =>parsers::jupiter::jup_parser::parse(tx, ix),
         };
 
         events.append(&mut parsed);
