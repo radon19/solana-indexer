@@ -81,7 +81,7 @@ pub struct Instruction {
     pub program_id: String,
 
     // Resolved pubkeys rather than only numeric indexes.
-    pub accounts: Vec<String>,
+    pub accounts: Vec<u8>,
 
     // Raw instruction data.
     pub data: Vec<u8>,
@@ -97,7 +97,7 @@ pub struct InnerInstructions {
 pub struct InnerInstruction {
     pub index: u32,
     pub program_id: String,
-    pub accounts: Vec<String>,
+    pub accounts: Vec<u8>,
     pub data: Vec<u8>,
 
     // Helps reconstruct invocation depth.

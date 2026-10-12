@@ -5,10 +5,11 @@ edition = "2024"
 
 [dependencies]
 bs58 = "0.5.1"
+carbon-jupiter-swap-decoder = "2.0.0"
 dotenvy = "0.15.7"
 futures = "0.3.34"
 sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres"] }
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "full"] }
-yellowstone-grpc-client = "14.0.1"
-yellowstone-grpc-proto = "13.0.0"
+yellowstone-grpc-client = "13.5.0"
+yellowstone-grpc-proto = "12.7.0"
 
