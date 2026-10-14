@@ -1,50 +1,54 @@
-use crate::{
-    normalization::{
-        events::{Event, Protocol::{self, Jupiter}}, structs::Transaction,
-    }, parsers::{self, constants},
-};
+use crate::{normalization::{events::Event, structs::{Instruction, Transaction}}, parsers::{constants::Program, jupiter::jup_parser}};
+
+
 
 pub fn route(tx: &Transaction) -> Vec<Event> {
     let mut events = Vec::new();
 
+    // ── top-level instructions ──
     for ix in &tx.instructions {
-        let protocol = match ix.program_id.as_str() {
-            constants::jupiter::AGGREGATOR_V6 => Some(Protocol::Jupiter),
+        events.extend(dispatch(tx, ix, false));
+    }
 
-            constants::pumpfun::BONDING_CURVE
-            | constants::pumpfun::AMM => Some(Protocol::PumpFun),
-
-            constants::raydium::AMM_V4
-            | constants::raydium::CPMM
-            | constants::raydium::CLMM
-            | constants::raydium::LAUNCHLAB => Some(Protocol::Raydium),
-
-            constants::orca::WHIRLPOOL
-            | constants::orca::TOKEN_SWAP_V2
-            | constants::orca::V1 => Some(Protocol::Orca),
-
-            constants::meteora::DLMM
-            | constants::meteora::DAMM_V1
-            | constants::meteora::DAMM_V2
-            | constants::meteora::DBC => Some(Protocol::Meteora),
-
-            _ => None,
-        };
-
-        let Some(protocol) = protocol else {
-            continue;
-        };
-
-        let mut parsed = match protocol {
-            Protocol::Jupiter => parsers::jupiter::jup_parser::parse(tx, ix),
-            Protocol::PumpFun => parsers::jupiter::jup_parser::parse(tx, ix),
-            Protocol::Raydium => parsers::jupiter::jup_parser::parse(tx, ix),
-            Protocol::Orca => parsers::jupiter::jup_parser::parse(tx, ix),
-            Protocol::Meteora =>parsers::jupiter::jup_parser::parse(tx, ix),
-        };
-
-        events.append(&mut parsed);
+    // ── CPI targets ──
+    // Jupiter appears here in most real traffic, not at the top level.
+    for group in &tx.inner_instructions {
+        for ix in &group.instructions {
+            events.extend(dispatch(tx, ix, true));
+        }
     }
 
     events
+}
+
+
+fn dispatch(tx: &Transaction, ix: &Instruction , inner: bool) -> Vec<Event> {
+    let Some(program) = Program::from_id(&ix.program_id) else {
+        return Vec::new();
+    };
+
+    match program {
+        Program::JupiterAggregatorV6 => jup_parser::parse(tx, ix,inner),
+        Program::JupiterLimitOrderV2 => todo!(), //skip for v1
+        Program::JupiterRfqOrderEngine => todo!(),//skip for v1
+        Program::JupiterRfqOrderEngineV2 => todo!(),//skip for v1
+        Program::PumpFunBondingCurve => todo!(),//skip for v1
+        Program::PumpSwapAmm => todo!(),//skip for v1
+        Program::PumpFees => todo!(),//skip for v1
+        Program::RaydiumAmmV4 => todo!(),//skip for v1
+        Program::RaydiumCpmm => todo!(),//skip for v1
+        Program::RaydiumClmm => todo!(),//skip for v1
+        Program::RaydiumLaunchLab => todo!(),//skip for v1
+        Program::RaydiumRoute => todo!(),//skip for v1
+        Program::OrcaWhirlpool => todo!(),//skip for v1
+        Program::OrcaTokenSwapV2 => todo!(),//skip for v1
+        Program::OrcaTokenSwapV1 => todo!(),//skip for v1
+        Program::MeteoraDlmm => todo!(),//skip for v1
+        Program::MeteoraDammV1 => todo!(),//skip for v1
+        Program::MeteoraDammV2 => todo!(),//skip for v1
+        Program::MeteoraDbc => todo!(),//skip for v1
+        Program::MeteoraDynamicVault => todo!(),//skip for v1
+
+    }
+
 }

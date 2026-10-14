@@ -1,7 +1,7 @@
 use yellowstone_grpc_proto::geyser::SubscribeUpdateTransaction;
 
 use crate::normalization::structs::{
-    Ingester, InnerInstruction, InnerInstructions, Instruction, LoadedAddresses, TokenBalance,
+    Ingester, InnerInstructions, Instruction, LoadedAddresses, TokenBalance,
     Transaction,
 };
 
@@ -48,12 +48,15 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                 .get(ix.program_id_index as usize)
                 .cloned()
                 .unwrap_or_default();
-            
+            let accounts = ix.accounts.clone();
             Instruction {
                 index: i as u32,
                 program_id,
-                accounts: ix.accounts.clone(),
+                program_id_index: ix.program_id_index,
+                accounts,
                 data: ix.data.clone(),
+                stack_height : None,
+                depth: 0,
             }
         })
         .collect();
@@ -62,7 +65,7 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
         .inner_instructions
         .iter()
         .map(|group| {
-            let instructions: Vec<InnerInstruction> = group
+            let instructions: Vec<Instruction> = group
                 .instructions
                 .iter()
                 .enumerate()
@@ -72,16 +75,16 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                         .cloned()
                         .unwrap_or_default();
 
-                    
+                    let accounts = ix.accounts.clone();
 
-                    
-
-                    InnerInstruction {
+                    Instruction {
                         index: i as u32,
                         program_id,
-                        accounts: ix.accounts.clone(),
+                        program_id_index:ix.program_id_index,
+                        accounts,
                         data: ix.data.clone(),
                         stack_height: ix.stack_height,
+                        depth : 1
                     }
                 })
                 .collect();
@@ -173,5 +176,3 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
 
     Ingester::Transaction(temp)
 }
-
-
