@@ -345,6 +345,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "carbon-jupiter-limit-order-2-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3179274ad4e7075c1458f1b69c18c45a6e193eca2526018382f0429c68edf1f4"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
 name = "carbon-jupiter-swap-decoder"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -365,6 +379,62 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ddb02847149a5d6b72fd63ff59355d87cef30900a0988e87171cb231686eaee"
 
 [[package]]
+name = "carbon-meteora-damm-v2-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2a235712b2db9da0c9086e3a1ab114e12c44e53d17a619bc28fa287b2fdf5fc"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-meteora-dbc-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21387090a17410281f7ca488eaf4d6e0e156646de8032e14f61b42c7e6af2670"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-meteora-dlmm-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e8c618b5b3b316ce2a88f668c3e66991578a74014584ec60518fe699793a5f7"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-orca-whirlpool-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c91e73d44afb740c87ccc72723d2e23ce6b4a1864b6eb4d5e1d48e9fc74fa9df"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
 name = "carbon-proc-macros"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -373,6 +443,104 @@ dependencies = [
  "quote",
  "serde",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "carbon-pump-fees-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06c27639f01b983fdec15ecd6345df01f4065baceecd1b0f7b22fe69a19cad23"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-pump-swap-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9652cb02b7cb1cefd0ed6901d26f83654efab88fe3495081aff530dc33d154b2"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-pumpfun-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d865821b7250a7c0ecb35c931dc140d9721d5877f34a8adc922567be7f435bcb"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-raydium-amm-v4-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1ab638c7b84cdf12b76a21b209f74da3419df217214789f4f0da0004476b7f4"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-raydium-clmm-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffb7203a350773e718be6d86c31dd35866fc351d63e20640329560cb30a1c662"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-raydium-cpmm-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78c7c1a582c80d218359190fb348d9182837eb014e40fb8e3da1f1d542e23e39"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
+]
+
+[[package]]
+name = "carbon-raydium-launchpad-decoder"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a01c0512f192e268f84cbc9ab7d3ff6626d8038dcac35567967a510e8126f91"
+dependencies = [
+ "borsh",
+ "carbon-core",
+ "serde_json",
+ "solana-account 4.3.2",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
 ]
 
 [[package]]
@@ -2636,9 +2804,24 @@ name = "solana-indexer"
 version = "0.1.0"
 dependencies = [
  "bs58",
+ "carbon-core",
+ "carbon-jupiter-limit-order-2-decoder",
  "carbon-jupiter-swap-decoder",
+ "carbon-meteora-damm-v2-decoder",
+ "carbon-meteora-dbc-decoder",
+ "carbon-meteora-dlmm-decoder",
+ "carbon-orca-whirlpool-decoder",
+ "carbon-pump-fees-decoder",
+ "carbon-pump-swap-decoder",
+ "carbon-pumpfun-decoder",
+ "carbon-raydium-amm-v4-decoder",
+ "carbon-raydium-clmm-decoder",
+ "carbon-raydium-cpmm-decoder",
+ "carbon-raydium-launchpad-decoder",
  "dotenvy",
  "futures",
+ "solana-instruction",
+ "solana-pubkey 4.2.1",
  "sqlx",
  "tokio",
  "yellowstone-grpc-client",

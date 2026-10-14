@@ -48,11 +48,11 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                 .get(ix.program_id_index as usize)
                 .cloned()
                 .unwrap_or_default();
-            let accounts = resolve_accounts(&ix.accounts, &resolved_keys);
+            
             Instruction {
                 index: i as u32,
                 program_id,
-                accounts,
+                accounts: ix.accounts.clone(),
                 data: ix.data.clone(),
             }
         })
@@ -72,12 +72,14 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
                         .cloned()
                         .unwrap_or_default();
 
-                    let accounts = resolve_accounts(&ix.accounts, &resolved_keys);
+                    
+
+                    
 
                     InnerInstruction {
                         index: i as u32,
                         program_id,
-                        accounts,
+                        accounts: ix.accounts.clone(),
                         data: ix.data.clone(),
                         stack_height: ix.stack_height,
                     }
@@ -172,10 +174,4 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
     Ingester::Transaction(temp)
 }
 
-fn resolve_accounts(packed: &[u8], keys: &[String]) -> Vec<String> {
-    packed
-        .chunks_exact(4)
-        .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-        .filter_map(|i| keys.get(i as usize).cloned())
-        .collect()
-}
+
