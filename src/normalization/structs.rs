@@ -75,34 +75,21 @@ pub struct Transaction {
 
 
 pub struct Instruction {
-    // Position in transaction.message.instructions
     pub index: u32,
-
+    pub program_id_index: u32,
     pub program_id: String,
-
-    // Resolved pubkeys rather than only numeric indexes.
     pub accounts: Vec<u8>,
-
-    // Raw instruction data.
     pub data: Vec<u8>,
+
+    pub depth: u8,                          // 0 = top-level, 1+ = CPI
+    pub stack_height: Option<u32>,           
 }
 
 pub struct InnerInstructions {
-    // Which outer instruction created these.
     pub parent_index: u32,
-
-    pub instructions: Vec<InnerInstruction>,
+    pub instructions: Vec<Instruction>, // ← same type as top-level
 }
 
-pub struct InnerInstruction {
-    pub index: u32,
-    pub program_id: String,
-    pub accounts: Vec<u8>,
-    pub data: Vec<u8>,
-
-    // Helps reconstruct invocation depth.
-    pub stack_height: Option<u32>,
-}
 
 pub struct TokenBalance {
     // Index into account_keys.

@@ -13,26 +13,43 @@ pub enum Event {
 // Jupiter / Raydium / Orca / Meteora / PumpSwap
 // --------------------------------------------------
 
+
 #[derive(Debug, Clone)]
 pub struct SwapEvent {
     pub signature: String,
     pub slot: u64,
 
+    // which instruction produced this
+    pub ix_index: u32,
+    pub inner: bool,      // true = reached through a CPI
+
     pub user: String,
-
-    // Actual execution protocol
-    // Example: Raydium
     pub protocol: Protocol,
-
-    // Aggregator, if any
-    // Example: Some("Jupiter")
     pub aggregator: Option<String>,
 
     pub input_mint: String,
     pub input_amount: u64,
-
     pub output_mint: String,
     pub output_amount: u64,
+
+    // Venue split from route_plan.
+    // Some(...) only on the aggregator event; a venue hop carries None.
+    pub route: Option<Vec<RouteHop>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RouteHop {
+    pub percent: u16,
+    pub program_id: String,
+    pub protocol: Protocol,
+
+    pub in_mint: Option<String>,
+    pub out_mint: Option<String>,
+
+    // route_plan holds percentages, not executed results.
+    // None unless an inner instruction supplies them.
+    pub in_amount: Option<u64>,
+    pub out_amount: Option<u64>,
 }
 
 // --------------------------------------------------
