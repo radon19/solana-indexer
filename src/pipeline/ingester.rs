@@ -23,12 +23,14 @@ tokio::pin!(stream);
                 helpers::slot_helper::get_slot(slot)
             }
             Some(UpdateOneof::Account(acc)) => {
+
                 helpers::account_helper::get_account(acc)
             }
             Some(UpdateOneof::BlockMeta(meta)) => {
                 helpers::block_meta_helper::get_block_meta(meta)
             }
             Some(UpdateOneof::Transaction(txn)) => {
+                println!("MEOW");
                 helpers::txn_helper::get_txn(txn)
             }
             _ => continue,
