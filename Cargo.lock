@@ -2212,6 +2212,7 @@ checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
  "log",
  "once_cell",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -2824,6 +2825,7 @@ dependencies = [
  "solana-pubkey 4.2.1",
  "sqlx",
  "tokio",
+ "tonic",
  "yellowstone-grpc-client",
  "yellowstone-grpc-proto",
 ]
