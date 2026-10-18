@@ -3,7 +3,7 @@ use crate::{
         events::Event,
         structs::{Instruction, Transaction},
     },
-    parsers::{constants::Program, jupiter::jup_parser},
+    parsers::{constants::Program, jupiter::jup_parser, pumpfun::pumpswap_parser},
 };
 
 pub fn route(tx: &Transaction) -> Vec<Event> {
@@ -32,8 +32,9 @@ fn dispatch(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
 
     match program {
         Program::JupiterAggregatorV6 => jup_parser::parse(tx, ix, inner),
-        _ => {
-            Vec::new()
-        },
+        Program::PumpSwapAmm => pumpswap_parser::parse(tx, ix, inner),
+        // A2 — pump.fun bonding curve, not written yet
+        Program::PumpFunBondingCurve => Vec::new(),
+        _ => Vec::new(),
     }
 }
