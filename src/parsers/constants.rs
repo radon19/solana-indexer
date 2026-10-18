@@ -62,3 +62,100 @@ pub mod token {
 pub mod system {
     pub const SYSTEM_PROGRAM: &str = "11111111111111111111111111111111";
 }
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Program {
+    JupiterAggregatorV6,
+    JupiterLimitOrderV2,
+    JupiterRfqOrderEngine,
+    JupiterRfqOrderEngineV2,
+
+    PumpFunBondingCurve,
+    PumpSwapAmm,
+    PumpFees,
+
+    RaydiumAmmV4,
+    RaydiumCpmm,
+    RaydiumClmm,
+    RaydiumLaunchLab,
+    RaydiumRoute,
+
+    OrcaWhirlpool,
+    OrcaTokenSwapV2,
+    OrcaTokenSwapV1,
+
+    MeteoraDlmm,
+    MeteoraDammV1,
+    MeteoraDammV2,
+    MeteoraDbc,
+    MeteoraDynamicVault,
+}
+
+
+impl Program {
+    /// Address to program. Called once per instruction, so keep it a plain
+    /// match on `&str` — no allocation.
+    pub fn from_id(id: &str) -> Option<Program> {
+        use Program::*;
+        Some(match id {
+            jupiter::AGGREGATOR_V6    => JupiterAggregatorV6,
+            jupiter::LIMIT_ORDER_V2  => JupiterLimitOrderV2,
+            jupiter::RFQ_ORDER_ENGINE => JupiterRfqOrderEngine,
+            jupiter::RFQ_ORDER_ENGINE_V2 => JupiterRfqOrderEngineV2,
+
+            pumpfun::BONDING_CURVE => PumpFunBondingCurve,
+            pumpfun::AMM          => PumpSwapAmm,
+            pumpfun::FEES         => PumpFees,
+
+            raydium::AMM_V4     => RaydiumAmmV4,
+            raydium::CPMM       => RaydiumCpmm,
+            raydium::CLMM       => RaydiumClmm,
+            raydium::LAUNCHLAB  => RaydiumLaunchLab,
+            raydium::ROUTE      => RaydiumRoute,
+
+            orca::WHIRLPOOL      => OrcaWhirlpool,
+            orca::TOKEN_SWAP_V2  => OrcaTokenSwapV2,
+            orca::V1             => OrcaTokenSwapV1,
+
+            meteora::DLMM         => MeteoraDlmm,
+            meteora::DAMM_V1      => MeteoraDammV1,
+            meteora::DAMM_V2      => MeteoraDammV2,
+            meteora::DBC          => MeteoraDbc,
+            meteora::DYNAMIC_VAULT => MeteoraDynamicVault,
+
+            _ => return None,
+        })
+    }
+
+}
+
+
+pub fn all_addresses() -> Vec<&'static str> {
+        vec![
+            jupiter::AGGREGATOR_V6,
+            jupiter::LIMIT_ORDER_V2,
+            jupiter::RFQ_ORDER_ENGINE,
+            jupiter::RFQ_ORDER_ENGINE_V2,
+
+            pumpfun::BONDING_CURVE,
+            pumpfun::AMM,
+            pumpfun::FEES,
+
+            raydium::AMM_V4,
+            raydium::CPMM,
+            raydium::CLMM,
+            raydium::LAUNCHLAB,
+            raydium::ROUTE,
+
+            orca::WHIRLPOOL,
+            orca::TOKEN_SWAP_V2,
+            orca::V1,
+
+            meteora::DLMM,
+            meteora::DAMM_V1,
+            meteora::DAMM_V2,
+            meteora::DBC,
+            meteora::DYNAMIC_VAULT,
+        ]
+    }
