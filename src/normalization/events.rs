@@ -161,7 +161,7 @@ pub struct PoolCreateEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protocol {
     Jupiter,
-    PumpFun,
+    Pump,
     Raydium,
     Orca,
     Meteora,
@@ -171,7 +171,7 @@ impl Protocol {
     pub fn as_str(&self) -> &'static str {
         match self {
             Protocol::Jupiter => "Jupiter",
-            Protocol::PumpFun => "Pump.fun",
+            Protocol::Pump => "Pump",
             Protocol::Raydium => "Raydium",
             Protocol::Orca => "Orca",
             Protocol::Meteora => "Meteora",
