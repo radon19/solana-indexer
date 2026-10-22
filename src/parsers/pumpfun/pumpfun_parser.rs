@@ -23,7 +23,7 @@ use crate::{
     parsers::{ resolve, to_pubkey},
 };
 
-pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
+pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
     let Some(pg_id) = to_pubkey(&ix.program_id) else {
         return Vec::new();
     };
@@ -50,6 +50,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
             true,
             data.amount,
             data.max_sol_cost,
+            inner
         ),
         SellV2 { data, accounts, .. } => trade(
             tx,
@@ -58,6 +59,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
             false,
             data.amount,
             data.min_sol_output,
+            inner
         ),
 
         // ── V1
@@ -68,6 +70,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
             true,
             data.amount,
             data.max_sol_cost,
+            inner
         ),
         Sell { data, accounts, .. } => trade(
             tx,
@@ -76,6 +79,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
             false,
             data.amount,
             data.min_sol_output,
+            inner
         ),
 
         // ── exact-in, spend a fixed amount of SOL/quote ─────────────
@@ -86,6 +90,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
             true,
             data.spendable_sol_in,
             data.min_tokens_out,
+            inner
         ),
         BuyExactQuoteInV2 { data, accounts, .. } => trade(
             tx,
@@ -94,6 +99,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, _inner: bool) -> Vec<Event> {
             true,
             data.spendable_quote_in,
             data.min_tokens_out,
+            inner
         ),
 
         // ── launch + graduation, Phase C ─────────────────────────────
@@ -128,15 +134,18 @@ fn trade(
     user: String,
     mint: String,
     is_buy: bool,
+    
     token_amount: u64,
     sol_amount: u64,
+inner : bool,
 ) -> Vec<Event> {
     vec![Event::Trade(TradeEvent {
         signature: tx.signature.clone(),
         slot: tx.slot,
         user,
-        protocol: Protocol::Pump,
+        protocol: Protocol::PumpFun,
         mint,
+        inner,
         side: if is_buy {
             TradeSide::Buy
         } else {

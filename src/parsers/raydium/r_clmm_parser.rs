@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use carbon_core::instruction::InstructionDecoder;
 use carbon_raydium_clmm_decoder::{
-    RaydiumClmmDecoder,
-    instructions::RaydiumClmmInstruction::{
+    RaydiumClmmDecoder, events::swap_event::SwapEventEvent, instructions::RaydiumClmmInstruction::{
         CloseLimitOrder, ClosePosition, CloseProtocolPosition, CollectFundFee, CollectProtocolFee,
         CollectRemainingRewards, CpiEvent, CreateAmmConfig, CreateCustomizablePool,
         CreateDynamicFeeConfig, CreateOperationAccount, CreatePool, CreateSupportMintAssociated,
@@ -13,12 +14,12 @@ use carbon_raydium_clmm_decoder::{
     },
 };
 use solana_instruction::Instruction as CarbonInstruction;
-use solana_pubkey::Pubkey;
 
+use crate::parsers::{program_data,mint_of};
 use crate::{
     normalization::{
         events::{Event, LiquidityAddEvent, LiquidityRemoveEvent, PoolCreateEvent, Protocol, SwapEvent, TradeEvent, TradeSide}, structs::{Instruction, Transaction},
-    }, parsers::{resolve, to_pubkey},
+    }, parsers::{ resolve, to_pubkey},
 };
 
 pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
@@ -40,9 +41,24 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         return Vec::new();
     };
 
+let executed = swap_events(tx);
+
     let events: Vec<Event> = match dec {
         // ── trades ─────────────────────────────────────────────────
-        Swap { data, accounts, .. } => vec![Event::Swap(SwapEvent {
+        Swap { data, accounts, .. } =>{
+let (input_amount, output_amount) =
+                match executed.get(&accounts.pool_state.to_string()) {
+                    Some((a0, a1, zero_for_one)) => {
+                        if *zero_for_one {
+                            (*a0, *a1)
+                        } else {
+                            (*a1, *a0)
+                        }
+                    }
+                    None => (data.amount, data.other_amount_threshold),
+                };
+        
+         vec![Event::Swap(SwapEvent {
             signature: tx.signature.clone(),
             slot: tx.slot,
 
@@ -55,14 +71,28 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
             aggregator: None,
 
             input_mint: mint_of(tx, &accounts.input_token_account),
-            input_amount: data.amount,
+            input_amount,
 
             output_mint: mint_of(tx, &accounts.output_token_account),
-            output_amount: data.other_amount_threshold,
+            output_amount,
 
             route: None,
-        })],
-        SwapV2 { data, accounts, .. } => vec![Event::Swap(SwapEvent {
+        })]
+    },
+        SwapV2 { data, accounts, .. } => {
+let (input_amount, output_amount) =
+                match executed.get(&accounts.pool_state.to_string()) {
+                    Some((a0, a1, zero_for_one)) => {
+                        if *zero_for_one {
+                            (*a0, *a1)
+                        } else {
+                            (*a1, *a0)
+                        }
+                    }
+                    None => (data.amount, data.other_amount_threshold),
+                };
+
+        vec![Event::Swap(SwapEvent {
             signature: tx.signature.clone(),
             slot: tx.slot,
 
@@ -75,13 +105,13 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
             aggregator: None,
 
             input_mint: accounts.input_vault_mint.to_string(),
-            input_amount: data.amount,
+            input_amount,
 
             output_mint: accounts.output_vault_mint.to_string(),
-            output_amount: data.other_amount_threshold,
+            output_amount,
 
             route: None,
-        })],
+        })]},
         
 
         // ── liquidity ───────────────────────────────────────────────
@@ -167,7 +197,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
 
-                protocol: Protocol::Raydium,
+                protocol: Protocol::RaydiumClmm,
 
                 pool: accounts.pool_state.to_string(),
 
@@ -181,7 +211,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
 
-                protocol: Protocol::Raydium,
+                protocol: Protocol::RaydiumClmm,
 
                 pool: accounts.pool_state.to_string(),
 
@@ -229,22 +259,17 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
     events
 }
 
-pub fn balance_of<'a>(
-    tx: &'a crate::normalization::structs::Transaction,
-    token_account: &Pubkey,
-) -> Option<&'a crate::normalization::structs::TokenBalance> {
-    let addr = token_account.to_string();
-    let idx = tx.account_keys.iter().position(|k| k == &addr)?;
+fn swap_events(tx: &Transaction) -> HashMap<String, (u64, u64, bool)> {
+    let mut out = HashMap::new();
 
-    tx.post_token_balances
-        .iter()
-        .chain(tx.pre_token_balances.iter())
-        .find(|b| b.account_index as usize == idx)
-}
+    for bytes in program_data(tx) {
+        if let Some(e) = SwapEventEvent::decode(&bytes) {
+            out.insert(
+                e.pool_state.to_string(),
+                (e.amount0, e.amount1, e.zero_for_one),
+            );
+        }
+    }
 
-/// Mint held by a token account.
-pub fn mint_of(tx: &crate::normalization::structs::Transaction, token_account: &Pubkey) -> String {
-    balance_of(tx, token_account)
-        .map(|b| b.mint.clone())
-        .unwrap_or_default()
+    out
 }
