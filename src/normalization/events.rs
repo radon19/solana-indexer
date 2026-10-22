@@ -62,6 +62,7 @@ pub struct TradeEvent {
     pub slot: u64,
 
     pub user: String,
+pub inner: bool, 
 
     pub protocol: Protocol,
 
@@ -161,8 +162,17 @@ pub struct PoolCreateEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protocol {
     Jupiter,
-    Pump,
-    Raydium,
+
+    // pump.fun ecosystem 
+    PumpSwap,      // PumpSwap AMM, where graduated coins trade
+    PumpFun,       // bonding curve, where coins are born and day-trade
+    PumpLaunch,    // the launch itself — LaunchEvent, Phase C
+
+    // Raydium
+    Raydium,       // AMM v4 + CPMM
+    RaydiumClmm,   // concentrated liquidity
+    RaydiumLaunch, // LaunchLab, a launchpad
+
     Orca,
     Meteora,
 }
@@ -171,8 +181,12 @@ impl Protocol {
     pub fn as_str(&self) -> &'static str {
         match self {
             Protocol::Jupiter => "Jupiter",
-            Protocol::Pump => "Pump",
+            Protocol::PumpSwap => "PumpSwap",
+            Protocol::PumpFun => "Pump.fun",
+            Protocol::PumpLaunch => "Pump.fun",
             Protocol::Raydium => "Raydium",
+            Protocol::RaydiumClmm => "Raydium CLMM",
+            Protocol::RaydiumLaunch => "Raydium LaunchLab",
             Protocol::Orca => "Orca",
             Protocol::Meteora => "Meteora",
         }

@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 bs58 = "0.5.1"
+base64 = "0.22.1"
+sha2 = "0.10"
 carbon-core = "2.0.0"
 carbon-jupiter-limit-order-2-decoder = "2.0.0"
 carbon-jupiter-swap-decoder = "2.0.0"

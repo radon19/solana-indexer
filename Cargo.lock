@@ -2804,6 +2804,7 @@ dependencies = [
 name = "solana-indexer"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "bs58",
  "carbon-core",
  "carbon-jupiter-limit-order-2-decoder",
@@ -2821,6 +2822,7 @@ dependencies = [
  "carbon-raydium-launchpad-decoder",
  "dotenvy",
  "futures",
+ "sha2 0.10.9",
  "solana-instruction",
  "solana-pubkey 4.2.1",
  "sqlx",
