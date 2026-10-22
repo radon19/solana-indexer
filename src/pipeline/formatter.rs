@@ -96,7 +96,7 @@ fn render_trade(n: usize, e: &TradeEvent, dec: &HashMap<String, u8>) -> String {
     };
 
     format!(
-        "{}      {}  {} for {} lamports\n",
+        "{}      {}  {} for {} SOL\n",
         header(n, e.protocol.as_str()),
         side,
         amt(e.token_amount, &e.mint, dec),
