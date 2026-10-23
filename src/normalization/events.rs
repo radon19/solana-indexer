@@ -6,6 +6,7 @@ pub enum Event {
     LiquidityAdd(LiquidityAddEvent),
     LiquidityRemove(LiquidityRemoveEvent),
     PoolCreate(PoolCreateEvent),
+    LaunchEvent(LaunchEvent),
 }
 
 // --------------------------------------------------
@@ -194,4 +195,27 @@ impl Protocol {
             Protocol::Unknown => "Unknown Protocol"
         }
     }
+}
+
+
+
+#[derive(Debug, Clone)]
+pub struct LaunchEvent {
+    pub signature: String,
+    pub slot: u64,
+    pub ix_index: u32,
+    pub inner: bool,
+    //time wrt to unix epoch
+    pub timestamp_unix_ms: i64,
+
+    pub protocol: Protocol,
+    pub mint: String,
+    pub creator: String,
+    pub user: String,
+
+    pub name: String,
+    pub symbol: String,
+    pub uri: String,
+
+    pub bonding_curve: String,
 }

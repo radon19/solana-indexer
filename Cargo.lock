@@ -2820,6 +2820,7 @@ dependencies = [
  "carbon-raydium-clmm-decoder",
  "carbon-raydium-cpmm-decoder",
  "carbon-raydium-launchpad-decoder",
+ "chrono",
  "dotenvy",
  "futures",
  "sha2 0.10.9",

@@ -10,7 +10,7 @@
 //     tracing::info!(?events);         // production
 
 use crate::normalization::events::{
-    Event, PoolCreateEvent, RouteHop, SwapEvent, TradeEvent, TradeSide, TransferEvent,
+    Event, LaunchEvent, PoolCreateEvent, RouteHop, SwapEvent, TradeEvent, TradeSide, TransferEvent,
 };
 use crate::normalization::structs::Transaction;
 use std::collections::HashMap;
@@ -51,6 +51,7 @@ pub fn render_tx(tx: &Transaction, events: &[Event]) -> String {
                 e.token_b_amount, &e.token_b_mint, &dec,
             )),
             Event::PoolCreate(e) => out.push_str(&render_pool_create(i, e, &dec)),
+Event::LaunchEvent(e) => out.push_str(&render_launch(i, e)),
         }
     }
 
@@ -147,6 +148,18 @@ fn render_pool_create(n: usize, e: &PoolCreateEvent, dec: &HashMap<String, u8>) 
         crate::normalization::tokens::abbreviate(&e.pool),
         symbol(&e.token_a_mint),
         symbol(&e.token_b_mint),
+    )
+}
+
+fn render_launch(n: usize, e: &LaunchEvent) -> String {
+    format!(
+        "{}      LAUNCH  {} ({})\n         mint    {}\n         creator {}\n         curve   {}\n",
+        header(n, e.protocol.as_str()),
+        e.symbol,
+        e.name,
+        crate::normalization::tokens::abbreviate(&e.mint),
+        crate::normalization::tokens::abbreviate(&e.creator),
+        crate::normalization::tokens::abbreviate(&e.bonding_curve),
     )
 }
 
