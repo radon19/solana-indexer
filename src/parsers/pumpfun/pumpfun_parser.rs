@@ -14,13 +14,12 @@ use carbon_pumpfun_decoder::{
     },
 };
 use solana_instruction::Instruction as CarbonInstruction;
+use chrono::Utc;
 
 use crate::{
     normalization::{
-        events::{Event, Protocol, TradeEvent, TradeSide},
-        structs::{Instruction, Transaction},
-    },
-    parsers::{ resolve, to_pubkey},
+        events::{Event, LaunchEvent, Protocol, TradeEvent, TradeSide}, structs::{Instruction, Transaction},
+    }, parsers::{ resolve, to_pubkey},
 };
 
 pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
@@ -105,9 +104,47 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         // ── launch + graduation, Phase C ─────────────────────────────
         // Create / CreateV2  → LaunchEvent
         // Migrate / MigrateV2 → GraduationEvent
-        Create { .. }
-        | CreateV2 { .. }
-        | ToggleCreateV2 { .. }
+        Create { data,accounts,.. }=>{
+let timestamp_ms: i64 = Utc::now().timestamp_millis();
+            vec![Event::LaunchEvent(LaunchEvent {
+                signature: tx.signature.clone(),
+                slot: tx.slot,
+                ix_index: ix.index,
+                inner,
+                timestamp_unix_ms: timestamp_ms,
+                protocol: Protocol::PumpLaunch,
+                mint: accounts.mint.to_string(),
+                creator: data.creator.to_string(),
+                user: accounts.user.to_string(),
+                name: data.name,
+                symbol: data.symbol,
+                uri: data.uri,
+                bonding_curve: accounts.bonding_curve.to_string(),
+            })]
+            
+        },
+        CreateV2 { data, accounts, .. } => {
+            let timestamp_ms: i64 = Utc::now().timestamp_millis();
+
+            vec![Event::LaunchEvent(LaunchEvent {
+                signature: tx.signature.clone(),
+                slot: tx.slot,
+                ix_index: ix.index,
+                inner,
+                timestamp_unix_ms: timestamp_ms,
+                protocol: Protocol::PumpLaunch,
+                mint: accounts.mint.to_string(),
+                creator: data.creator.to_string(),
+                user: accounts.user.to_string(),
+                name: data.name,
+                symbol: data.symbol,
+                uri: data.uri,
+                bonding_curve: accounts.bonding_curve.to_string(),
+            })]
+        },
+
+
+        ToggleCreateV2 { .. }
         | Migrate { .. }
         | MigrateV2 { .. }
         | MigrateBondingCurveCreator { .. }
