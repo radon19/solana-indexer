@@ -175,6 +175,8 @@ pub enum Protocol {
 
     Orca,
     Meteora,
+
+    Unknown,
 }
 
 impl Protocol {
@@ -189,6 +191,7 @@ impl Protocol {
             Protocol::RaydiumLaunch => "Raydium LaunchLab",
             Protocol::Orca => "Orca",
             Protocol::Meteora => "Meteora",
+            Protocol::Unknown => "Unknown Protocol"
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::{
     normalization::{
         events::Event,
         structs::{Instruction, Transaction},
-    }, parsers::{constants::Program, jupiter::jup_parser, orca::{self, orca_w_parser}, pumpfun::{pumpfun_parser, pumpswap_parser}, raydium},
+    }, parsers::{constants::Program, jupiter::jup_parser, meteora::{m_damm_two, m_dbc, m_dlmm}, orca::{self, orca_w_parser}, pumpfun::{pumpfun_parser, pumpswap_parser}, raydium},
 };
 
 pub fn route(tx: &Transaction) -> Vec<Event> {
@@ -36,6 +36,9 @@ fn dispatch(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         Program::PumpFunBondingCurve => pumpfun_parser::parse(tx, ix, inner),
         Program::RaydiumClmm => raydium::r_clmm_parser::parse(tx, ix, inner),
         Program::OrcaWhirlpool => orca::orca_w_parser::parse(tx, ix, inner),
+        Program::MeteoraDammV2 => m_damm_two::parse(tx, ix, inner),
+        Program::MeteoraDlmm => m_dlmm::parse(tx, ix, inner),
+        Program::MeteoraDbc => m_dbc::parse(tx, ix, inner),
         _ => Vec::new(),
     }
 }
