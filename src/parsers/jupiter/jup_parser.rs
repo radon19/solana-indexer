@@ -418,21 +418,57 @@ fn owner_and_mint(tx: &Transaction, token_account: &str) -> Option<(String, Stri
 
 // return protocols for routue eg: orca->radyium
 fn venue(swap: &Swap) -> Protocol {
-    match swap {
-        Swap::Raydium | Swap::RaydiumV2 | Swap::RaydiumClmm | Swap::RaydiumClmmV2 => {
-            Protocol::Raydium
+     match swap {
+        // ── PumpSwap AMM ──────────────────────────────────────────────
+        Swap::PumpSwapBuy
+        | Swap::PumpSwapSell
+        | Swap::PumpSwapBuyV2
+        | Swap::PumpSwapSellV2
+        | Swap::PumpSwapBuyV3
+        | Swap::PumpSwapSellV3
+        | Swap::PumpSwapBuyV3WithCashbackClaim
+        | Swap::PumpSwapSellV3WithCashbackClaim => Protocol::PumpSwap,
+
+        // ── pump.fun bonding curve ───────────────────────────────────
+        Swap::PumpWrappedBuy
+        | Swap::PumpWrappedSell
+        | Swap::PumpWrappedBuyV2
+        | Swap::PumpWrappedSellV2
+        | Swap::PumpWrappedBuyV3
+        | Swap::PumpWrappedSellV3
+        | Swap::PumpWrappedBuyV4
+        | Swap::PumpWrappedSellV4
+        | Swap::PumpWrappedBuyV4WithCashbackClaim
+        | Swap::PumpWrappedSellV4WithCashbackClaim => Protocol::PumpFun,
+
+        // ── Raydium ──────────────────────────────────────────────────
+        Swap::Raydium | Swap::RaydiumV2 | Swap::RaydiumCP => Protocol::Raydium,
+        Swap::RaydiumClmm | Swap::RaydiumClmmV2 => Protocol::RaydiumClmm,
+        Swap::RaydiumLaunchlabBuy { .. } | Swap::RaydiumLaunchlabSell { .. } => {
+            Protocol::RaydiumLaunch
         }
 
+        // ── Orca ─────────────────────────────────────────────────────
         Swap::Whirlpool { .. } | Swap::WhirlpoolSwapV2 { .. } => Protocol::Orca,
 
+        // ── Meteora ──────────────────────────────────────────────────
         Swap::Meteora
         | Swap::MeteoraDlmm
         | Swap::MeteoraDlmmSwapV2 { .. }
         | Swap::MeteoraDammV2
+        | Swap::MeteoraDammV2WithRemainingAccounts
         | Swap::MeteoraDynamicBondingCurveSwap
         | Swap::MeteoraDynamicBondingCurveSwapWithRemainingAccounts => Protocol::Meteora,
 
-        _ => Protocol::Jupiter,
+        // ── Jupiter's own routing/lending hops ───────────────────────
+        Swap::JupiterLendDeposit
+        | Swap::JupiterLendRedeem
+        | Swap::JupiterRfqV2 { .. }
+        | Swap::DynamicV1 { .. }
+        | Swap::DynamicV2 { .. } => Protocol::Jupiter,
+
+        // ── venues not tracked yet ───────────────────────────────────
+        _ => Protocol::Unknown,
     }
 }
 
