@@ -23,6 +23,7 @@ pub async fn process(
                 if !events.is_empty() {
                     println!("{}", render_tx(&txn, &events));
                 }
+
             }
 
             Ingester::Account(account) => {
