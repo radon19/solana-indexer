@@ -61,6 +61,7 @@ pub struct RouteHop {
 pub struct TradeEvent {
     pub signature: String,
     pub slot: u64,
+    pub ix_index: u32,
 
     pub user: String,
 pub inner: bool, 
@@ -105,6 +106,8 @@ pub struct TransferEvent {
 pub struct LiquidityAddEvent {
     pub signature: String,
     pub slot: u64,
+    pub ix_index: u32,
+    pub inner: bool,
 
     pub user: String,
 
@@ -127,6 +130,8 @@ pub struct LiquidityAddEvent {
 pub struct LiquidityRemoveEvent {
     pub signature: String,
     pub slot: u64,
+    pub ix_index: u32,
+    pub inner: bool,
 
     pub user: String,
 
@@ -149,6 +154,8 @@ pub struct LiquidityRemoveEvent {
 pub struct PoolCreateEvent {
     pub signature: String,
     pub slot: u64,
+    pub ix_index: u32,
+    pub inner: bool,
 
     pub protocol: Protocol,
 

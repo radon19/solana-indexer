@@ -216,6 +216,8 @@ let traded = traded_events(tx);
             vec![Event::LiquidityAdd(LiquidityAddEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.position_authority.to_string(),
 
@@ -237,6 +239,8 @@ let traded = traded_events(tx);
             vec![Event::LiquidityAdd(LiquidityAddEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.position_authority.to_string(),
 
@@ -265,6 +269,8 @@ let traded = traded_events(tx);
             vec![Event::LiquidityAdd(LiquidityAddEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.position_authority.to_string(),
 
@@ -286,6 +292,8 @@ let traded = traded_events(tx);
             vec![Event::LiquidityRemove(LiquidityRemoveEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.position_authority.to_string(),
 
@@ -307,6 +315,8 @@ let traded = traded_events(tx);
             vec![Event::LiquidityRemove(LiquidityRemoveEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.position_authority.to_string(),
 
@@ -329,6 +339,8 @@ let traded = traded_events(tx);
             vec![Event::PoolCreate(PoolCreateEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 protocol: Protocol::Orca,
 
@@ -343,6 +355,8 @@ let traded = traded_events(tx);
             vec![Event::PoolCreate(PoolCreateEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 protocol: Protocol::Orca,
 
@@ -357,6 +371,8 @@ let traded = traded_events(tx);
             vec![Event::PoolCreate(PoolCreateEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 protocol: Protocol::Orca,
 
@@ -389,6 +405,8 @@ let traded = traded_events(tx);
                 Event::LiquidityRemove(LiquidityRemoveEvent {
                     signature: tx.signature.clone(),
                     slot: tx.slot,
+                    ix_index: ix.index,
+                    inner,
 
                     user: accounts.position_authority.to_string(),
 
@@ -407,6 +425,8 @@ let traded = traded_events(tx);
                 Event::LiquidityAdd(LiquidityAddEvent {
                     signature: tx.signature.clone(),
                     slot: tx.slot,
+                    ix_index: ix.index,
+                    inner,
 
                     user: accounts.position_authority.to_string(),
 

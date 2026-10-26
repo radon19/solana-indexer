@@ -119,6 +119,8 @@ let (input_amount, output_amount) =
             vec![Event::LiquidityAdd(LiquidityAddEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.nft_owner.to_string(),
 
@@ -138,6 +140,8 @@ let (input_amount, output_amount) =
             vec![Event::LiquidityAdd(LiquidityAddEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.nft_owner.to_string(),
 
@@ -157,6 +161,8 @@ let (input_amount, output_amount) =
             vec![Event::LiquidityRemove(LiquidityRemoveEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.nft_owner.to_string(),
 
@@ -176,6 +182,8 @@ let (input_amount, output_amount) =
             vec![Event::LiquidityRemove(LiquidityRemoveEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 user: accounts.nft_owner.to_string(),
 
@@ -196,6 +204,8 @@ let (input_amount, output_amount) =
             vec![Event::PoolCreate(PoolCreateEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 protocol: Protocol::RaydiumClmm,
 
@@ -210,6 +220,8 @@ let (input_amount, output_amount) =
             vec![Event::PoolCreate(PoolCreateEvent {
                 signature: tx.signature.clone(),
                 slot: tx.slot,
+                ix_index: ix.index,
+                inner,
 
                 protocol: Protocol::RaydiumClmm,
 
