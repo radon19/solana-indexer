@@ -7,7 +7,6 @@ pub async fn grpc_connect() -> GeyserGrpcClient<> {
     let helper = Config::from_env();
     let url = helper.geyser_url;
     let x_token = helper.geyser_api_key;
-    println!("{} : {}",url,x_token);
 
 
     let mut tries = 10;
@@ -17,6 +16,7 @@ pub async fn grpc_connect() -> GeyserGrpcClient<> {
         let builder =
             GeyserGrpcClient::build_from_shared(url.clone())
             .expect("Invalid URL")
+            .max_decoding_message_size(64 * 1024 * 1024)
             .tls_config(ClientTlsConfig::new().with_native_roots())
             .expect("tls config")
             .x_token(Some(x_token.clone()))

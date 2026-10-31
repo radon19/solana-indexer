@@ -3,6 +3,9 @@ name = "solana-indexer"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+replay = []
+
 [dependencies]
 bs58 = "0.5.1"
 base64 = "0.22.1"

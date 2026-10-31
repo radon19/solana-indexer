@@ -1,0 +1,284 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="2030" viewBox="0 0 2400 2030">
+<title>Solana Indexer — architecture and features</title>
+<desc>Live Yellowstone gRPC, optional local validator with Geyser, and offline capture replay feed normalization, bounded queues, Carbon parsers, formatted output, batched PostgreSQL writes and finalized checkpoints. Includes DLQ and graceful shutdown.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,1 L8,5 L1,9" fill="none" stroke="context-stroke" stroke-width="2"/></marker></defs>
+<rect width="2400" height="2030" fill="#fafaf7"/>
+<rect x="82" y="57" width="9" height="114" rx="18" fill="#8d68d0" stroke="#8d68d0" stroke-width="2"/>
+<text x="112" y="64.6" fill="#7953bc" font-family="Liberation Sans,Arial,sans-serif" font-size="20" font-weight="700">
+<tspan x="112" dy="0">SYSTEM ARCHITECTURE  /  DEX DATA PIPELINE</tspan>
+</text>
+<text x="108" y="145.36" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="72" font-weight="700">
+<tspan x="108" dy="0">Solana Indexer</tspan>
+</text>
+<text x="112" y="199.52" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="29">
+<tspan x="112" dy="0">Finalized chain data. Structured events. Durable storage.</tspan>
+</text>
+<text x="1885" y="104.24" fill="#167f76" font-family="Liberation Sans,Arial,sans-serif" font-size="23" font-weight="700">
+<tspan x="1885" dy="0">RUST  /  TOKIO</tspan>
+</text>
+<text x="1885" y="140.48" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="21">
+<tspan x="1885" dy="0">YELLOWSTONE  +  CARBON</tspan>
+</text>
+<rect x="90" y="245" width="620" height="170" rx="18" fill="#eaf3fb" stroke="#3974af" stroke-width="2"/>
+<text x="116" y="278.84" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="116" dy="0">INPUT 01 · LIVE</tspan>
+</text>
+<text x="116" y="320.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="116" dy="0">Yellowstone gRPC</tspan>
+</text>
+<text x="116" y="359.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="116" dy="0">Remote Geyser endpoint</tspan>
+<tspan x="116" dy="29.900000000000002">Tracked on-chain programs</tspan>
+</text>
+<rect x="760" y="245" width="620" height="170" rx="18" fill="#f1edfa" stroke="#7953bc" stroke-width="2" stroke-dasharray="9 7"/>
+<text x="786" y="278.84" fill="#7953bc" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="786" dy="0">INPUT 02 · LOCAL / OPTIONAL</tspan>
+</text>
+<text x="786" y="320.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="786" dy="0">Local test validator</tspan>
+</text>
+<text x="786" y="359.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="786" dy="0">Geyser plugin + Yellowstone service</tspan>
+<tspan x="786" dy="29.900000000000002">Point the configured endpoint locally</tspan>
+</text>
+<rect x="1630" y="245" width="660" height="170" rx="18" fill="#fff4df" stroke="#aa742a" stroke-width="2"/>
+<text x="1656" y="278.84" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1656" dy="0">INPUT 03 · OFFLINE</tspan>
+</text>
+<text x="1656" y="320.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1656" dy="0">Replay capture</tspan>
+</text>
+<text x="1656" y="359.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1656" dy="0">capture.bin · recorded protobuf updates</tspan>
+<tspan x="1656" dy="29.900000000000002">Repeatable development and regression tests</tspan>
+</text>
+<rect x="90" y="480" width="1290" height="165" rx="18" fill="#eaf3fb" stroke="#3974af" stroke-width="2"/>
+<text x="116" y="513.84" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="116" dy="0">LIVE ENTRY</tspan>
+</text>
+<text x="116" y="555.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="116" dy="0">Connect + subscribe</tspan>
+</text>
+<text x="116" y="594.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="116" dy="0">Finalized blocks + tracked account updates</tspan>
+<tspan x="116" dy="29.900000000000002">Program account filters · full matching transaction envelopes</tspan>
+</text>
+<rect x="1630" y="480" width="660" height="165" rx="18" fill="#fff4df" stroke="#aa742a" stroke-width="2"/>
+<text x="1656" y="513.84" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1656" dy="0">OFFLINE ENTRY</tspan>
+</text>
+<text x="1656" y="555.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1656" dy="0">Replay producer</tspan>
+</text>
+<text x="1656" y="594.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1656" dy="0">Read frames → decode SubscribeUpdate</tspan>
+<tspan x="1656" dy="29.900000000000002">Uses the shared normalization helpers</tspan>
+</text>
+<polyline points="400,415 400,480" fill="none" stroke="#3974af" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1070,415 1070,480" fill="none" stroke="#7953bc" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="8 7"/>
+<polyline points="1960,415 1960,480" fill="none" stroke="#aa742a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="300,645 300,715" fill="none" stroke="#3974af" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="135" y="688.6" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="20">
+<tspan x="135" dy="0">live stream</tspan>
+</text>
+<polyline points="1960,645 1960,680 600,680 600,715" fill="none" stroke="#aa742a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1030" y="667.6" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="20">
+<tspan x="1030" dy="0">captured updates · bypass subscription</tspan>
+</text>
+<rect x="90" y="715" width="620" height="190" rx="18" fill="#eef7f5" stroke="#167f76" stroke-width="2"/>
+<text x="116" y="748.84" fill="#167f76" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="116" dy="0">PIPELINE 01</tspan>
+</text>
+<text x="116" y="790.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="116" dy="0">Ingest + normalize</tspan>
+</text>
+<text x="116" y="829.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="116" dy="0">Resolve account keys and instruction indexes</tspan>
+<tspan x="116" dy="29.900000000000002">Normalize transaction / account / block data</tspan>
+<tspan x="116" dy="29.900000000000002">Live: validate complete finalized blocks</tspan>
+</text>
+<rect x="790" y="715" width="300" height="190" rx="18" fill="#f4f3ef" stroke="#526174" stroke-width="2"/>
+<text x="816" y="748.84" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="816" dy="0">PIPELINE 02</tspan>
+</text>
+<text x="816" y="790.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="816" dy="0">Bounded queue</tspan>
+</text>
+<text x="816" y="829.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="816" dy="0">Tokio mpsc</tspan>
+<tspan x="816" dy="29.900000000000002">Backpressure</tspan>
+<tspan x="816" dy="29.900000000000002">Accepted work retained</tspan>
+</text>
+<rect x="1170" y="715" width="1120" height="330" rx="18" fill="#f1edfa" stroke="#7953bc" stroke-width="2"/>
+<text x="1196" y="748.84" fill="#7953bc" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1196" dy="0">PIPELINE 03</tspan>
+</text>
+<text x="1196" y="790.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1196" dy="0">Processor → router → protocol parsers</tspan>
+</text>
+<text x="1196" y="829.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1196" dy="0">Dispatch top-level instructions and CPI calls</tspan>
+<tspan x="1196" dy="29.900000000000002">Carbon decodes instruction bytes + arranged accounts</tspan>
+<tspan x="1196" dy="29.900000000000002">Invocation-aware execution matching where supported</tspan>
+</text>
+<polyline points="710,810 790,810" fill="none" stroke="#167f76" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1090,810 1170,810" fill="none" stroke="#7953bc" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1196" y="945.84" fill="#7953bc" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1196" dy="0">PROTOCOL COVERAGE</tspan>
+</text>
+<text x="1196" y="984.24" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1196" dy="0">Jupiter  ·  Pump.fun  ·  PumpSwap  ·  Raydium CLMM / CPMM / AMM v4</tspan>
+<tspan x="1196" dy="29.900000000000002">Orca Whirlpool  ·  Meteora DLMM / DAMM v2 / DBC</tspan>
+</text>
+<rect x="1170" y="1110" width="1120" height="140" rx="18" fill="#f1edfa" stroke="#7953bc" stroke-width="2"/>
+<text x="1196" y="1143.84" fill="#7953bc" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1196" dy="0">PIPELINE 04</tspan>
+</text>
+<text x="1196" y="1185.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1196" dy="0">Typed events</tspan>
+</text>
+<text x="1196" y="1224.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1196" dy="0">Swap  ·  Trade  ·  Route hops  ·  Liquidity add/remove  ·  Pool create  ·  Launch</tspan>
+</text>
+<polyline points="1730,1045 1730,1110" fill="none" stroke="#7953bc" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="90" y="980" width="1000" height="275" rx="18" fill="#ffffff" stroke="#aac7c1" stroke-width="2"/>
+<text x="120" y="1025.48" fill="#167f76" font-family="Liberation Sans,Arial,sans-serif" font-size="21" font-weight="700">
+<tspan x="120" dy="0">FINALIZED-SLOT INTEGRITY</tspan>
+</text>
+<text x="120" y="1075.64" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="28" font-weight="700">
+<tspan x="120" dy="0">Complete block envelope → validate → parse → write</tspan>
+</text>
+<text x="120" y="1122.12" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="24">
+<tspan x="120" dy="0">• Follow the parent slot + block hash chain</tspan>
+<tspan x="120" dy="31.200000000000003">• Keep the complete slot together through storage</tspan>
+<tspan x="120" dy="31.200000000000003">• Ordinary slot notifications do not advance checkpoints</tspan>
+<tspan x="120" dy="31.200000000000003">• Offline capture replay creates no live resume checkpoints</tspan>
+</text>
+<rect x="1170" y="1340" width="450" height="200" rx="18" fill="#eef7f5" stroke="#167f76" stroke-width="2"/>
+<text x="1196" y="1373.84" fill="#167f76" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1196" dy="0">OUTPUT A · OPTIONAL</tspan>
+</text>
+<text x="1196" y="1415.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1196" dy="0">Terminal formatter</tspan>
+</text>
+<text x="1196" y="1454.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1196" dy="0">PRINT_EVENTS=1</tspan>
+<tspan x="1196" dy="29.900000000000002">Readable events + mint references</tspan>
+<tspan x="1196" dy="29.900000000000002">Exact integer amount formatting</tspan>
+</text>
+<rect x="1740" y="1340" width="550" height="200" rx="18" fill="#eaf3fb" stroke="#3974af" stroke-width="2"/>
+<text x="1766" y="1373.84" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1766" dy="0">OUTPUT B · STORAGE</tspan>
+</text>
+<text x="1766" y="1415.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1766" dy="0">Writer + batching</tspan>
+</text>
+<text x="1766" y="1454.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1766" dy="0">WriteMsg → bounded queue → Batch</tspan>
+<tspan x="1766" dy="29.900000000000002">Flush at 1,000 rows or 250 ms</tspan>
+<tspan x="1766" dy="29.900000000000002">Complete finalized slots stay together</tspan>
+</text>
+<polyline points="1730,1250 1730,1290 1395,1290 1395,1340" fill="none" stroke="#167f76" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<polyline points="1730,1290 2015,1290 2015,1340" fill="none" stroke="#3974af" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1170" y="1610" width="450" height="200" rx="18" fill="#fff4df" stroke="#aa742a" stroke-width="2"/>
+<text x="1196" y="1643.84" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1196" dy="0">RECOVERY</tspan>
+</text>
+<text x="1196" y="1685.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1196" dy="0">Dead-letter batches</tspan>
+</text>
+<text x="1196" y="1724.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1196" dy="0">Durable payloads for failed writes</tspan>
+<tspan x="1196" dy="29.900000000000002">Transient errors retry with backoff</tspan>
+<tspan x="1196" dy="29.900000000000002">Checkpoint failures stop advancement</tspan>
+</text>
+<rect x="1740" y="1610" width="550" height="200" rx="18" fill="#eaf3fb" stroke="#3974af" stroke-width="2"/>
+<text x="1766" y="1643.84" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="18" font-weight="700">
+<tspan x="1766" dy="0">PERSISTENCE</tspan>
+</text>
+<text x="1766" y="1685.4" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="30" font-weight="700">
+<tspan x="1766" dy="0">PostgreSQL</tspan>
+</text>
+<text x="1766" y="1724.24" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1766" dy="0">Chain + accounts + transactions</tspan>
+<tspan x="1766" dy="29.900000000000002">DEX events + route hops</tspan>
+<tspan x="1766" dy="29.900000000000002">Data + checkpoint: one atomic commit</tspan>
+</text>
+<polyline points="2140,1540 2140,1610" fill="none" stroke="#3974af" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1950" y="1572.6" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="20">
+<tspan x="1950" dy="0">SQL transaction</tspan>
+</text>
+<polyline points="1840,1540 1840,1580 1395,1580 1395,1610" fill="none" stroke="#aa742a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1430" y="1567.72" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="19">
+<tspan x="1430" dy="0">permanent write failure</tspan>
+</text>
+<polyline points="1620,1725 1740,1725" fill="none" stroke="#aa742a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="8 7"/>
+<text x="1629" y="1759.96" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="17">
+<tspan x="1629" dy="0">manual</tspan>
+</text>
+<text x="1629" y="1781.96" fill="#aa742a" font-family="Liberation Sans,Arial,sans-serif" font-size="17">
+<tspan x="1629" dy="0">replay</tspan>
+</text>
+<rect x="90" y="1310" width="1000" height="480" rx="18" fill="#ffffff" stroke="#b9afcc" stroke-width="2"/>
+<text x="120" y="1356.36" fill="#7953bc" font-family="Liberation Sans,Arial,sans-serif" font-size="22" font-weight="700">
+<tspan x="120" dy="0">ENGINEERING FEATURES</tspan>
+</text>
+<text x="120" y="1411.12" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="24" font-weight="700">
+<tspan x="120" dy="0">CPI-aware event identity</tspan>
+</text>
+<text x="120" y="1448.36" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="22">
+<tspan x="120" dy="0">Parent + local instruction indexes</tspan>
+<tspan x="120" dy="28.6">keep repeated calls distinct.</tspan>
+</text>
+<text x="615" y="1411.12" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="24" font-weight="700">
+<tspan x="615" dy="0">Precise unsigned storage</tspan>
+</text>
+<text x="615" y="1448.36" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="22">
+<tspan x="615" dy="0">u64 amounts use NUMERIC(20,0).</tspan>
+<tspan x="615" dy="28.6">No signed integer wraparound.</tspan>
+</text>
+<text x="120" y="1541.12" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="24" font-weight="700">
+<tspan x="120" dy="0">Bounded async stages</tspan>
+</text>
+<text x="120" y="1578.36" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="22">
+<tspan x="120" dy="0">Tokio tasks + channel backpressure</tspan>
+<tspan x="120" dy="28.6">protect queued work under load.</tspan>
+</text>
+<text x="615" y="1541.12" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="24" font-weight="700">
+<tspan x="615" dy="0">Graceful shutdown</tspan>
+</text>
+<text x="615" y="1578.36" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="22">
+<tspan x="615" dy="0">SIGINT / SIGTERM: stop input,</tspan>
+<tspan x="615" dy="28.6">drain queues, then finish writes.</tspan>
+</text>
+<text x="120" y="1671.12" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="24" font-weight="700">
+<tspan x="120" dy="0">Reproducible verification</tspan>
+</text>
+<text x="120" y="1708.36" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="22">
+<tspan x="120" dy="0">Unit fixtures + capture replay +</tspan>
+<tspan x="120" dy="28.6">PostgreSQL regression checks.</tspan>
+</text>
+<text x="615" y="1671.12" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="24" font-weight="700">
+<tspan x="615" dy="0">Replay-safe persistence</tspan>
+</text>
+<text x="615" y="1708.36" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="22">
+<tspan x="615" dy="0">Idempotent event keys + DLQ</tspan>
+<tspan x="615" dy="28.6">recovery support safe retries.</tspan>
+</text>
+<rect x="90" y="1860" width="2200" height="112" rx="18" fill="#f0f1ed" stroke="#c8cec7" stroke-width="2"/>
+<text x="115" y="1895.96" fill="#167f76" font-family="Liberation Sans,Arial,sans-serif" font-size="17" font-weight="700">
+<tspan x="115" dy="0">STARTUP POLICY</tspan>
+</text>
+<text x="115" y="1935.24" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="115" dy="0">Starts live · checkpoint loading is available but disabled</tspan>
+</text>
+<text x="1130" y="1895.96" fill="#3974af" font-family="Liberation Sans,Arial,sans-serif" font-size="17" font-weight="700">
+<tspan x="1130" dy="0">INPUT NOTES</tspan>
+</text>
+<text x="1130" y="1935.24" fill="#202c40" font-family="Liberation Sans,Arial,sans-serif" font-size="23">
+<tspan x="1130" dy="0">Dashed paths = optional local input / manual recovery</tspan>
+</text>
+<text x="92" y="2005.84" fill="#526174" font-family="Liberation Sans,Arial,sans-serif" font-size="18">
+<tspan x="92" dy="0">ARCHITECTURE OVERVIEW  ·  Local diagram generation only; no provider connection used.</tspan>
+</text>
+</svg>

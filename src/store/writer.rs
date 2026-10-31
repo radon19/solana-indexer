@@ -1,6 +1,5 @@
-//! Persistence runs on its own task. The indexer only hands over messages and
-//! moves on; it never awaits Postgres, so DB latency/failures stay off the
-//! parse path.
+//! Persistence runs on its own task behind a bounded channel. When the database
+//! is slow, backpressure eventually pauses parsing instead of dropping updates.
 
 use std::collections::{BTreeMap, HashSet};
 use std::time::Duration;
@@ -8,11 +7,11 @@ use std::time::Duration;
 use sqlx::{PgPool, Postgres, QueryBuilder, Transaction};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
-use tokio::time::{interval, MissedTickBehavior};
+use tokio::time::{MissedTickBehavior, interval};
 
 use crate::normalization::structs::{Account, BlockMeta, Slot};
 use crate::store::batch_schema::{
-    status_str, Batch, HopRow, LaunchRow, LiqRow, PoolRow, SwapRow, TradeRow, TxRow, WriteMsg,
+    Batch, HopRow, LaunchRow, LiqRow, PoolRow, SwapRow, TradeRow, TxRow, WriteMsg, status_str,
 };
 use crate::store::dlq;
 
@@ -22,13 +21,13 @@ const MAX_ROWS: usize = 1_000;
 const FLUSH_EVERY: Duration = Duration::from_millis(250);
 const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
-pub fn spawn(pool: PgPool, buffer: usize) -> (Sender, JoinHandle<()>) {
+pub fn spawn(pool: PgPool, buffer: usize) -> (Sender, JoinHandle<std::io::Result<()>>) {
     let (tx, rx) = mpsc::channel(buffer);
     let handle = tokio::spawn(run(rx, pool));
     (tx, handle)
 }
 
-async fn run(mut rx: mpsc::Receiver<WriteMsg>, pool: PgPool) {
+async fn run(mut rx: mpsc::Receiver<WriteMsg>, pool: PgPool) -> std::io::Result<()> {
     let mut batch = Batch::default();
     let mut tick = interval(FLUSH_EVERY);
     tick.set_missed_tick_behavior(MissedTickBehavior::Delay);
@@ -39,17 +38,17 @@ async fn run(mut rx: mpsc::Receiver<WriteMsg>, pool: PgPool) {
                 Some(msg) => {
                     batch.push(msg);
                     if batch.len() >= MAX_ROWS {
-                        flush(&pool, &mut batch).await;
+                        flush(&pool, &mut batch).await?;
                     }
                 }
                 None => {
-                    flush(&pool, &mut batch).await;
-                    return;
+                    flush(&pool, &mut batch).await?;
+                    return Ok(());
                 }
             },
             _ = tick.tick() => {
                 if batch.len() > 0 {
-                    flush(&pool, &mut batch).await;
+                    flush(&pool, &mut batch).await?;
                 }
             }
         }
@@ -72,14 +71,17 @@ fn next_dlq_backoff(attempt: &mut u32) -> Duration {
     backoff(*attempt)
 }
 
-async fn flush(pool: &PgPool, batch: &mut Batch) {
+async fn flush(pool: &PgPool, batch: &mut Batch) -> std::io::Result<()> {
+    if batch.len() == 0 {
+        return Ok(());
+    }
     let mut attempt = 0u32;
 
     loop {
         match write_batch(pool, batch).await {
             Ok(()) => {
                 *batch = Batch::default();
-                return;
+                return Ok(());
             }
             Err(err) => {
                 attempt += 1;
@@ -94,8 +96,15 @@ async fn flush(pool: &PgPool, batch: &mut Batch) {
                                     "store: batch {id} moved to DLQ after {attempt} attempt(s), {} rows: {err}",
                                     batch.len()
                                 );
+                                // Never advance a later checkpoint past a failed block.
+                                let checkpointed = !batch.checkpoints.is_empty();
                                 *batch = Batch::default();
-                                return;
+                                if checkpointed {
+                                    return Err(std::io::Error::other(format!(
+                                        "checkpointed batch moved to DLQ {id}; stopping to preserve resume continuity"
+                                    )));
+                                }
+                                return Ok(());
                             }
                             Err(dlq_err) => {
                                 let delay = next_dlq_backoff(&mut dlq_attempt);
@@ -129,20 +138,106 @@ pub(crate) async fn write_batch_replay(pool: &PgPool, batch: &Batch) -> Result<(
 async fn write_batch_inner(pool: &PgPool, batch: &Batch, replay: bool) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
 
-    insert_slots(&mut tx, &batch.slots, replay).await?;
-    insert_blocks(&mut tx, &batch.blocks, replay).await?;
-    insert_accounts(&mut tx, &batch.accounts).await?;
-    insert_txns(&mut tx, &batch.txns).await?;
-
-    insert_swaps(&mut tx, &batch.swaps).await?;
-    insert_hops(&mut tx, &batch.hops).await?; // after swap_events: FK
-
-    insert_trades(&mut tx, &batch.trades).await?;
-    insert_launches(&mut tx, &batch.launches).await?;
-    insert_liqs(&mut tx, &batch.liqs).await?;
-    insert_pools(&mut tx, &batch.pools).await?;
+    for rows in batch.slots.chunks(MAX_ROWS) {
+        insert_slots(&mut tx, rows, replay).await?;
+    }
+    for rows in batch.blocks.chunks(MAX_ROWS) {
+        insert_blocks(&mut tx, rows, replay).await?;
+    }
+    for rows in batch.accounts.chunks(MAX_ROWS) {
+        insert_accounts(&mut tx, rows).await?;
+    }
+    for rows in batch.txns.chunks(MAX_ROWS) {
+        insert_txns(&mut tx, rows).await?;
+    }
+    for rows in batch.swaps.chunks(MAX_ROWS) {
+        insert_swaps(&mut tx, rows).await?;
+    }
+    for rows in batch.hops.chunks(MAX_ROWS) {
+        insert_hops(&mut tx, rows).await?;
+    }
+    for rows in batch.trades.chunks(MAX_ROWS) {
+        insert_trades(&mut tx, rows).await?;
+    }
+    for rows in batch.launches.chunks(MAX_ROWS) {
+        insert_launches(&mut tx, rows).await?;
+    }
+    for rows in batch.liqs.chunks(MAX_ROWS) {
+        insert_liqs(&mut tx, rows).await?;
+    }
+    for rows in batch.pools.chunks(MAX_ROWS) {
+        insert_pools(&mut tx, rows).await?;
+    }
+    fill_block_times(&mut tx, batch).await?;
+    for point in &batch.checkpoints {
+        let transactions: Vec<_> = batch
+            .txns
+            .iter()
+            .filter(|row| row.slot == point.slot as i64)
+            .collect();
+        let unique: HashSet<_> = transactions
+            .iter()
+            .map(|row| (&row.signature, row.tx_index))
+            .collect();
+        if transactions.len() as u64 != point.indexed_transactions
+            || unique.len() != transactions.len()
+            || !batch.blocks.iter().any(|block| {
+                block.slot == point.slot
+                    && block.blockhash == point.blockhash
+                    && block.parent_slot == point.parent_slot
+                    && block.parent_blockhash == point.parent_blockhash
+                    && block.tx_count == point.total_transactions
+            })
+            || point.indexed_transactions > point.total_transactions
+        {
+            return Err(sqlx::Error::InvalidArgument(
+                "checkpoint lacks its complete block data".into(),
+            ));
+        }
+        crate::resume::store(&mut tx, point).await?;
+    }
 
     tx.commit().await
+}
+
+/// Copy chain time from block metadata. Include both arriving events and arriving
+/// metadata so this also fills rows saved before their block time was known.
+/// Launch timestamp_unix_ms remains the indexer's own time.
+async fn fill_block_times(
+    tx: &mut Transaction<'_, Postgres>,
+    batch: &Batch,
+) -> Result<(), sqlx::Error> {
+    let slots: HashSet<i64> = batch
+        .blocks
+        .iter()
+        .map(|row| row.slot as i64)
+        .chain(batch.txns.iter().map(|row| row.slot))
+        .chain(batch.swaps.iter().map(|row| row.slot))
+        .chain(batch.trades.iter().map(|row| row.slot))
+        .chain(batch.launches.iter().map(|row| row.slot))
+        .chain(batch.liqs.iter().map(|row| row.slot))
+        .chain(batch.pools.iter().map(|row| row.slot))
+        .collect();
+    if slots.is_empty() {
+        return Ok(());
+    }
+    let slots: Vec<_> = slots.into_iter().collect();
+    for table in [
+        "transactions",
+        "swap_events",
+        "trade_events",
+        "launch_events",
+        "liquidity_events",
+        "pool_events",
+    ] {
+        // Table names are fixed above; values use bound parameters.
+        let mut query = QueryBuilder::<Postgres>::new("UPDATE ");
+        query.push(table).push(" AS event SET block_time = block.block_time FROM block_meta AS block WHERE event.slot = block.slot AND event.slot = ANY(")
+            .push_bind(&slots)
+            .push(") AND event.block_time IS NULL AND block.block_time IS NOT NULL");
+        query.build().execute(&mut **tx).await?;
+    }
+    Ok(())
 }
 
 fn slot_conflict_clause(replay: bool) -> &'static str {
@@ -245,6 +340,8 @@ async fn insert_blocks(
     Ok(())
 }
 
+// Bind unsigned amounts as decimal text with an explicit NUMERIC cast.
+// This preserves all 64 bits without requiring a signed integer conversion.
 async fn insert_accounts(
     tx: &mut Transaction<'_, Postgres>,
     rows: &[Account],
@@ -260,7 +357,8 @@ async fn insert_accounts(
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.pubkey.as_str())
             .push_bind(r.owner.as_str())
-            .push_bind(r.lamports as i64)
+            .push_bind(r.lamports.to_string())
+            .push_unseparated("::numeric")
             .push_bind(r.slot as i64)
             .push_bind(r.data.as_slice())
             .push_bind(r.executable)
@@ -291,7 +389,8 @@ async fn insert_txns(
             .push_bind(r.success)
             .push_bind(r.versioned)
             .push_bind(r.error.as_deref())
-            .push_bind(r.fee)
+            .push_bind(r.fee.to_string())
+            .push_unseparated("::numeric")
             .push_bind(r.fee_payer.as_deref());
     });
     qb.push(" ON CONFLICT (signature) DO NOTHING");
@@ -308,20 +407,23 @@ async fn insert_swaps(
     }
 
     let mut qb = QueryBuilder::new(
-        "INSERT INTO swap_events (slot, signature, ix_index, is_inner, user_address, protocol, aggregator, input_mint, input_amount, output_mint, output_amount) ",
+        "INSERT INTO swap_events (slot, signature, ix_index, parent_ix_index, is_inner, user_address, protocol, aggregator, input_mint, input_amount, output_mint, output_amount) ",
     );
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.slot)
             .push_bind(r.signature.as_str())
             .push_bind(r.ix_index)
+            .push_bind(r.parent_ix_index)
             .push_bind(r.is_inner)
             .push_bind(r.user.as_str())
             .push_bind(r.protocol.as_str())
             .push_bind(r.aggregator.as_deref())
             .push_bind(r.input_mint.as_str())
-            .push_bind(r.input_amount)
+            .push_bind(r.input_amount.to_string())
+            .push_unseparated("::numeric")
             .push_bind(r.output_mint.as_str())
-            .push_bind(r.output_amount);
+            .push_bind(r.output_amount.to_string())
+            .push_unseparated("::numeric");
     });
     qb.push(" ON CONFLICT DO NOTHING");
     qb.build().execute(&mut **tx).await?;
@@ -337,12 +439,13 @@ async fn insert_hops(
     }
 
     let mut qb = QueryBuilder::new(
-        "INSERT INTO route_hops (slot, signature, ix_index, is_inner, hop_index, percent_bps, program_id, protocol, in_mint, out_mint, in_amount, out_amount) ",
+        "INSERT INTO route_hops (slot, signature, ix_index, parent_ix_index, is_inner, hop_index, percent_bps, program_id, protocol, in_mint, out_mint, in_amount, out_amount) ",
     );
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.slot)
             .push_bind(r.signature.as_str())
             .push_bind(r.ix_index)
+            .push_bind(r.parent_ix_index)
             .push_bind(r.is_inner)
             .push_bind(r.hop_index)
             .push_bind(r.percent_bps)
@@ -350,8 +453,10 @@ async fn insert_hops(
             .push_bind(r.protocol.as_str())
             .push_bind(r.in_mint.as_deref())
             .push_bind(r.out_mint.as_deref())
-            .push_bind(r.in_amount)
-            .push_bind(r.out_amount);
+            .push_bind(r.in_amount.map(|amount| amount.to_string()))
+            .push_unseparated("::numeric")
+            .push_bind(r.out_amount.map(|amount| amount.to_string()))
+            .push_unseparated("::numeric");
     });
     qb.push(" ON CONFLICT DO NOTHING");
     qb.build().execute(&mut **tx).await?;
@@ -367,19 +472,22 @@ async fn insert_trades(
     }
 
     let mut qb = QueryBuilder::new(
-        "INSERT INTO trade_events (slot, signature, ix_index, is_inner, user_address, protocol, mint, side, token_amount, quote_amount) ",
+        "INSERT INTO trade_events (slot, signature, ix_index, parent_ix_index, is_inner, user_address, protocol, mint, side, token_amount, quote_amount) ",
     );
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.slot)
             .push_bind(r.signature.as_str())
             .push_bind(r.ix_index)
+            .push_bind(r.parent_ix_index)
             .push_bind(r.is_inner)
             .push_bind(r.user.as_str())
             .push_bind(r.protocol.as_str())
             .push_bind(r.mint.as_str())
             .push_bind(r.side.as_str())
-            .push_bind(r.token_amount)
-            .push_bind(r.quote_amount);
+            .push_bind(r.token_amount.to_string())
+            .push_unseparated("::numeric")
+            .push_bind(r.quote_amount.to_string())
+            .push_unseparated("::numeric");
     });
     qb.push(" ON CONFLICT DO NOTHING");
     qb.build().execute(&mut **tx).await?;
@@ -395,12 +503,13 @@ async fn insert_launches(
     }
 
     let mut qb = QueryBuilder::new(
-        "INSERT INTO launch_events (slot, signature, ix_index, is_inner, timestamp_unix_ms, protocol, mint, creator, user_address, name, symbol, uri, bonding_curve) ",
+        "INSERT INTO launch_events (slot, signature, ix_index, parent_ix_index, is_inner, timestamp_unix_ms, protocol, mint, creator, user_address, name, symbol, uri, bonding_curve) ",
     );
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.slot)
             .push_bind(r.signature.as_str())
             .push_bind(r.ix_index)
+            .push_bind(r.parent_ix_index)
             .push_bind(r.is_inner)
             .push_bind(r.timestamp_unix_ms)
             .push_bind(r.protocol.as_str())
@@ -426,21 +535,24 @@ async fn insert_liqs(
     }
 
     let mut qb = QueryBuilder::new(
-        "INSERT INTO liquidity_events (slot, signature, ix_index, is_inner, kind, user_address, protocol, pool, token_a_mint, token_a_amount, token_b_mint, token_b_amount) ",
+        "INSERT INTO liquidity_events (slot, signature, ix_index, parent_ix_index, is_inner, kind, user_address, protocol, pool, token_a_mint, token_a_amount, token_b_mint, token_b_amount) ",
     );
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.slot)
             .push_bind(r.signature.as_str())
             .push_bind(r.ix_index)
+            .push_bind(r.parent_ix_index)
             .push_bind(r.is_inner)
             .push_bind(r.kind.as_str())
             .push_bind(r.user.as_str())
             .push_bind(r.protocol.as_str())
             .push_bind(r.pool.as_str())
             .push_bind(r.token_a_mint.as_str())
-            .push_bind(r.token_a_amount)
+            .push_bind(r.token_a_amount.to_string())
+            .push_unseparated("::numeric")
             .push_bind(r.token_b_mint.as_str())
-            .push_bind(r.token_b_amount);
+            .push_bind(r.token_b_amount.to_string())
+            .push_unseparated("::numeric");
     });
     qb.push(" ON CONFLICT DO NOTHING");
     qb.build().execute(&mut **tx).await?;
@@ -456,12 +568,13 @@ async fn insert_pools(
     }
 
     let mut qb = QueryBuilder::new(
-        "INSERT INTO pool_events (slot, signature, ix_index, is_inner, protocol, pool, token_a_mint, token_b_mint) ",
+        "INSERT INTO pool_events (slot, signature, ix_index, parent_ix_index, is_inner, protocol, pool, token_a_mint, token_b_mint) ",
     );
     qb.push_values(rows, |mut b, r| {
         b.push_bind(r.slot)
             .push_bind(r.signature.as_str())
             .push_bind(r.ix_index)
+            .push_bind(r.parent_ix_index)
             .push_bind(r.is_inner)
             .push_bind(r.protocol.as_str())
             .push_bind(r.pool.as_str())
@@ -477,6 +590,24 @@ async fn insert_pools(
 mod tests {
     use super::*;
     use crate::normalization::structs::Status;
+
+    #[tokio::test]
+    async fn empty_writer_shutdown_does_not_require_a_database_write() {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy("postgres://unused:unused@localhost/unused")
+            .unwrap();
+        pool.close().await;
+        let (sender, mut writer) = spawn(pool, 1);
+        drop(sender);
+        let result = tokio::time::timeout(Duration::from_millis(200), &mut writer).await;
+        if result.is_err() {
+            writer.abort();
+        }
+        assert!(
+            result.is_ok(),
+            "an empty writer should exit without trying a DB transaction"
+        );
+    }
 
     fn account(pubkey: &str, lamports: u64, write_version: u64) -> Account {
         Account {

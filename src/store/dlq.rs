@@ -108,7 +108,7 @@ pub(crate) async fn record(
     let id = sqlx::query_scalar::<_, i64>(
         "INSERT INTO dead_letter_batches
          (attempts, row_count, sqlstate, error, payload_format, payload)
-         VALUES ($1, $2, $3, $4, 'json-v1', $5)
+         VALUES ($1, $2, $3, $4, 'json-v2', $5)
          RETURNING id",
     )
     .bind(attempts as i32)

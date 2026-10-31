@@ -74,6 +74,7 @@ pub(crate) fn swap_event(
         slot: tx.slot,
 
         ix_index: ix.index,
+        parent_ix_index: ix.parent_index,
         inner,
 
         user: user.to_string(),

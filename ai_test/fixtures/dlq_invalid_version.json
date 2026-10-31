@@ -1,0 +1,21 @@
+{
+  "version": 99,
+  "batch": {
+    "slots": [
+      {
+        "slot": 900000002,
+        "parent": 900000001,
+        "status": "finalized"
+      }
+    ],
+    "blocks": [],
+    "accounts": [],
+    "txns": [],
+    "swaps": [],
+    "hops": [],
+    "trades": [],
+    "launches": [],
+    "liqs": [],
+    "pools": []
+  }
+}

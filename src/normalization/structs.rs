@@ -11,13 +11,12 @@ pub struct Slot {
     pub status: Status,
 }
 
-
 pub struct Account {
     pub pubkey: String,
     pub owner: String,
     pub lamports: u64,
     pub slot: u64,
-    pub data:Vec<u8>,
+    pub data: Vec<u8>,
     pub executable: bool,
     pub write_version: u64,
 }
@@ -29,18 +28,16 @@ pub struct BlockMeta {
     pub parent_blockhash: String,
     pub block_time: Option<i64>,
     pub tx_count: u64,
-    pub block_height:Option<u64>,
+    pub block_height: Option<u64>,
 }
 
-
 pub enum Ingester {
+    FinalizedSlot(crate::resume::CompleteSlot),
     Slot(Slot),
     Transaction(Transaction),
     Account(Account),
     BlockMeta(BlockMeta),
 }
-
-
 
 pub struct Transaction {
     pub signature: String,
@@ -68,28 +65,28 @@ pub struct Transaction {
 
     // Execution result
     pub success: bool,
-    pub versioned : bool,
+    pub versioned: bool,
     pub error: Option<Vec<u8>>,
     pub fee: u64,
 }
 
-
 pub struct Instruction {
     pub index: u32,
+    // Top-level instruction that owns this CPI; None for top-level calls.
+    pub parent_index: Option<u32>,
     pub program_id_index: u32,
     pub program_id: String,
     pub accounts: Vec<u8>,
     pub data: Vec<u8>,
 
-    pub depth: u8,                          // 0 = top-level, 1+ = CPI
-    pub stack_height: Option<u32>,           
+    pub depth: u8, // 0 = top-level, 1+ = CPI
+    pub stack_height: Option<u32>,
 }
 
 pub struct InnerInstructions {
     pub parent_index: u32,
     pub instructions: Vec<Instruction>, // ← same type as top-level
 }
-
 
 pub struct TokenBalance {
     // Index into account_keys.

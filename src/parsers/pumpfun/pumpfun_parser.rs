@@ -44,7 +44,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
     let events: Vec<Event> = match dec {
         BuyV2 { data, accounts, .. } => trade(
             tx,
-            ix.index,
+            ix,
             accounts.user.to_string(),
             accounts.base_mint.to_string(),
             true,
@@ -54,7 +54,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         ),
         SellV2 { data, accounts, .. } => trade(
             tx,
-            ix.index,
+            ix,
             accounts.user.to_string(),
             accounts.base_mint.to_string(),
             false,
@@ -66,7 +66,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         // ── V1
         Buy { data, accounts, .. } => trade(
             tx,
-            ix.index,
+            ix,
             accounts.user.to_string(),
             accounts.mint.to_string(),
             true,
@@ -76,7 +76,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         ),
         Sell { data, accounts, .. } => trade(
             tx,
-            ix.index,
+            ix,
             accounts.user.to_string(),
             accounts.mint.to_string(),
             false,
@@ -88,7 +88,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         // ── exact-in, spend a fixed amount of SOL/quote ─────────────
         BuyExactSolIn { data, accounts, .. } => trade(
             tx,
-            ix.index,
+            ix,
             accounts.user.to_string(),
             accounts.mint.to_string(),
             true,
@@ -98,7 +98,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
         ),
         BuyExactQuoteInV2 { data, accounts, .. } => trade(
             tx,
-            ix.index,
+            ix,
             accounts.user.to_string(),
             accounts.base_mint.to_string(),
             true,
@@ -116,6 +116,7 @@ let timestamp_ms: i64 = Utc::now().timestamp_millis();
                 signature: tx.signature.clone(),
                 slot: tx.slot,
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
                 timestamp_unix_ms: timestamp_ms,
                 protocol: Protocol::PumpLaunch,
@@ -136,6 +137,7 @@ let timestamp_ms: i64 = Utc::now().timestamp_millis();
                 signature: tx.signature.clone(),
                 slot: tx.slot,
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
                 timestamp_unix_ms: timestamp_ms,
                 protocol: Protocol::PumpLaunch,
@@ -174,7 +176,7 @@ let timestamp_ms: i64 = Utc::now().timestamp_millis();
 
 fn trade(
     tx: &Transaction,
-    ix_index: u32,
+    ix: &Instruction,
     user: String,
     mint: String,
     is_buy: bool,
@@ -186,7 +188,8 @@ inner : bool,
     vec![Event::Trade(TradeEvent {
         signature: tx.signature.clone(),
         slot: tx.slot,
-        ix_index,
+        ix_index: ix.index,
+        parent_ix_index: ix.parent_index,
         user,
         protocol: Protocol::PumpFun,
         mint,

@@ -14,19 +14,11 @@
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, watch};
 
-use yellowstone_grpc_proto::{
-    geyser::{SubscribeUpdate, subscribe_update::UpdateOneof},
-    prost::Message,
-};
+use yellowstone_grpc_proto::{geyser::SubscribeUpdate, prost::Message};
 
-use crate::{
-    helpers,
-    normalization::structs::Ingester,
-    pipeline::processer::process,
-    store::writer::Sender,
-};
+use crate::{normalization::structs::Ingester, pipeline::ingester::normalize};
 
 const DEFAULT_PATH: &str = "capture.bin";
 
@@ -63,73 +55,65 @@ pub fn load(path: &str) -> std::io::Result<Vec<SubscribeUpdate>> {
     Ok(out)
 }
 
-/// Normalize one update. Mirrors the live path in pipeline::ingester.
-fn normalize(update: SubscribeUpdate) -> Option<Ingester> {
-    Some(match update.update_oneof? {
-        UpdateOneof::Slot(slot) => helpers::slot_helper::get_slot(slot),
-        UpdateOneof::Account(acc) => helpers::account_helper::get_account(acc),
-        UpdateOneof::BlockMeta(meta) => helpers::block_meta_helper::get_block_meta(meta),
-        UpdateOneof::Transaction(txn) => helpers::txn_helper::get_txn(txn),
-        _ => return None,
-    })
-}
-
-/// Replay the capture into the normal pipeline.
-///
-/// The consumer is spawned once and lives as long as the sender does, so
-/// looping the file does not restart it — state carries across passes the
-/// same way it would on a live stream.
-pub async fn run(writer: Sender) {
+/// Replay is a producer just like live ingestion; main supervises all workers.
+pub async fn produce(
+    tx: mpsc::Sender<Ingester>,
+    stop: watch::Receiver<bool>,
+) -> std::io::Result<()> {
     let path = std::env::var("REPLAY").unwrap_or_else(|_| DEFAULT_PATH.to_string());
     let loop_forever = std::env::var("REPLAY_LOOP").is_ok();
-
-    let updates = match load(&path) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("REPLAY FAILED — cannot read {path}: {e}");
-            eprintln!("record one first:  cargo run --bin capture");
-            return;
-        }
-    };
-
-    let (tx, rx) = mpsc::channel(20);
-    let consumer = tokio::spawn(process(rx, Some(writer)));
-
+    let load_path = path.clone();
+    let updates = tokio::task::spawn_blocking(move || load(&load_path))
+        .await
+        .map_err(std::io::Error::other)?
+        .map_err(|error| {
+            eprintln!("REPLAY FAILED — cannot read {path}: {error}");
+            error
+        })?;
     let mut pass = 0u32;
+    let mut total_sent = 0u64;
 
-    loop {
-        pass += 1;
+    'passes: loop {
+        if *stop.borrow() {
+            break;
+        }
+        pass = pass.saturating_add(1);
         let started = std::time::Instant::now();
         let mut sent = 0u64;
-
         eprintln!("REPLAY pass {pass}: {} updates from {path}", updates.len());
 
         for update in &updates {
+            if *stop.borrow() {
+                break 'passes;
+            }
             let Some(data) = normalize(update.clone()) else {
                 continue;
             };
-
-            if tx.send(data).await.is_err() {
-                eprintln!("consumer dropped, stopping");
-                return;
-            }
-
+            // Finish this accepted update even when shutdown arrives mid-send.
+            tx.send(data).await.map_err(|_| {
+                std::io::Error::new(
+                    std::io::ErrorKind::BrokenPipe,
+                    "replay processor input channel closed",
+                )
+            })?;
             sent += 1;
+            total_sent += 1;
         }
-
         eprintln!(
             "REPLAY pass {pass} done: {sent} updates in {:.2}s",
             started.elapsed().as_secs_f64()
         );
-
         if !loop_forever {
             break;
         }
+        // An empty looping capture must not prevent the supervisor seeing signals.
+        tokio::task::yield_now().await;
     }
 
-    // closing the sender lets the consumer finish its range and exit
-    drop(tx);
-    let _ = consumer.await;
-
-    eprintln!("REPLAY complete — {pass} pass(es)");
+    if *stop.borrow() {
+        eprintln!("REPLAY stopped: {total_sent} updates accepted; draining queued work.");
+    } else {
+        eprintln!("REPLAY complete — {pass} pass(es)");
+    }
+    Ok(())
 }

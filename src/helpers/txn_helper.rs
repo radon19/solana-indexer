@@ -1,8 +1,7 @@
 use yellowstone_grpc_proto::geyser::SubscribeUpdateTransaction;
 
 use crate::normalization::structs::{
-    Ingester, InnerInstructions, Instruction, LoadedAddresses, TokenBalance,
-    Transaction,
+    Ingester, InnerInstructions, Instruction, LoadedAddresses, TokenBalance, Transaction,
 };
 
 pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
@@ -51,11 +50,12 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
             let accounts = ix.accounts.clone();
             Instruction {
                 index: i as u32,
+                parent_index: None,
                 program_id,
                 program_id_index: ix.program_id_index,
                 accounts,
                 data: ix.data.clone(),
-                stack_height : None,
+                stack_height: None,
                 depth: 0,
             }
         })
@@ -79,12 +79,13 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
 
                     Instruction {
                         index: i as u32,
+                        parent_index: Some(group.index),
                         program_id,
-                        program_id_index:ix.program_id_index,
+                        program_id_index: ix.program_id_index,
                         accounts,
                         data: ix.data.clone(),
                         stack_height: ix.stack_height,
-                        depth : 1
+                        depth: 1,
                     }
                 })
                 .collect();
@@ -175,4 +176,100 @@ pub fn get_txn(txn: SubscribeUpdateTransaction) -> Ingester {
     };
 
     Ingester::Transaction(temp)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{normalization::events::Event, pipeline::router};
+    use yellowstone_grpc_proto::{geyser::SubscribeUpdateTransactionInfo, prelude as proto};
+
+    #[test]
+    fn normalization_and_parser_preserve_cpi_parent_identity() {
+        // A real Pump.fun Buy layout: discriminator, amount, max cost, track_volume.
+        let mut data = vec![102, 6, 61, 18, 1, 218, 235, 234];
+        data.extend_from_slice(&10u64.to_le_bytes());
+        data.extend_from_slice(&20u64.to_le_bytes());
+        data.push(0);
+        let mut keys: Vec<Vec<u8>> = (0..16u8).map(|n| vec![n; 32]).collect();
+        keys.push(
+            bs58::decode(crate::parsers::constants::pumpfun::BONDING_CURVE)
+                .into_vec()
+                .unwrap(),
+        );
+        let instruction = proto::CompiledInstruction {
+            program_id_index: 16,
+            accounts: (0..16).collect(),
+            data: data.clone(),
+        };
+        let inner = proto::InnerInstruction {
+            program_id_index: 16,
+            accounts: (0..16).collect(),
+            data,
+            stack_height: Some(2),
+        };
+        let update = SubscribeUpdateTransaction {
+            slot: 9,
+            transaction: Some(SubscribeUpdateTransactionInfo {
+                signature: vec![1; 64],
+                transaction: Some(proto::Transaction {
+                    message: Some(proto::Message {
+                        account_keys: keys,
+                        instructions: vec![instruction.clone(), instruction],
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+                meta: Some(proto::TransactionStatusMeta {
+                    inner_instructions: vec![
+                        proto::InnerInstructions {
+                            index: 0,
+                            instructions: vec![inner.clone()],
+                        },
+                        proto::InnerInstructions {
+                            index: 1,
+                            instructions: vec![inner],
+                        },
+                    ],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+        };
+        let Ingester::Transaction(tx) = get_txn(update) else {
+            panic!("expected transaction")
+        };
+        let events = router::route(&tx);
+        let identities: Vec<_> = events
+            .iter()
+            .map(|event| {
+                let Event::Trade(trade) = event else {
+                    panic!("expected trade")
+                };
+                (trade.ix_index, trade.parent_ix_index, trade.inner)
+            })
+            .collect();
+        assert_eq!(
+            identities,
+            vec![
+                (0, None, false),
+                (1, None, false),
+                (0, Some(0), true),
+                (0, Some(1), true)
+            ]
+        );
+        let mut batch = crate::store::batch_schema::Batch::default();
+        batch.push(crate::store::batch_schema::WriteMsg::transaction(
+            tx, events,
+        ));
+        let payload: serde_json::Value =
+            serde_json::from_slice(&batch.to_dlq_payload().unwrap()).unwrap();
+        let parents: Vec<_> = payload["batch"]["trades"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row["parent_ix_index"].as_i64().unwrap())
+            .collect();
+        assert_eq!(parents, vec![-1, -1, 0, 1]);
+    }
 }

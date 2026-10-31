@@ -1,0 +1,241 @@
+SOLANA INDEXER — LOCAL VERIFICATION EVIDENCE
+Verification session: 2026-10-31
+Unit tests rerun while preparing README. Capture/acceptance output below was recorded during this session’s earlier offline PostgreSQL verification.
+All recorded runtime checks used offline captures and disposable PostgreSQL databases. No live-provider connection was used.
+
+rustc 1.98.1 (48a229cea 2026-09-01)
+Capture: capture.bin
+Capture bytes: 42999818
+Capture SHA-256: 1c62720e500825d7972f22ba41bc529c50127788142e484b4aa474ccdfb940ff
+
+=== UNIT TESTS ===
+Command: cargo test --locked --all-features --bin solana-indexer
+running 90 tests
+test normalization::tokens::tests::majors_resolve ... ok
+test normalization::tokens::tests::unknown_falls_back_to_address ... ok
+test parsers::execution::tests::incomplete_or_failed_target_is_rejected ... ok
+test parsers::execution::tests::completed_target_survives_later_log_truncation ... ok
+test parsers::execution::tests::malformed_or_duplicate_log_payloads_do_not_produce_amounts ... ok
+test parsers::execution::tests::mismatched_program_or_missing_stack_height_is_rejected ... ok
+test parsers::execution::tests::failed_unrelated_child_does_not_supply_its_payload ... ok
+test parsers::execution::tests::ancestor_failure_invalidates_successful_inner_event ... ok
+test parsers::execution::tests::missing_child_logs_are_not_treated_as_a_complete_trace ... ok
+test normalization::tokens::tests::no_duplicate_addresses ... ok
+test parsers::execution::tests::precompiles_without_logs_do_not_shift_instruction_identity ... ok
+test parsers::execution::tests::missing_events_do_not_borrow_a_later_calls_payload ... ok
+test parsers::execution::tests::nested_same_program_calls_keep_separate_payloads ... ok
+test normalization::tokens::tests::every_entry_is_a_pubkey ... ok
+test parsers::execution::tests::repeated_cpi_events_remain_ambiguous ... ok
+test parsers::execution::tests::self_cpi_payload_is_accepted_and_log_copy_is_not_counted_twice ... ok
+test parsers::orca::orca_w_parser::tests::two_hop_v2_uses_first_input_and_last_output ... ok
+test parsers::orca::orca_w_parser::tests::two_hop_v1_uses_first_input_and_last_output ... ok
+test parsers::pumpfun::pumpswap_parser::tests::same_pool_inner_swaps_keep_their_own_execution_amounts ... ok
+test parsers::pumpfun::pumpswap_parser::tests::same_inner_index_under_different_parents_keeps_separate_events ... ok
+test parsers::pumpfun::pumpswap_parser::tests::same_pool_swaps_keep_their_own_execution_amounts ... ok
+test parsers::orca::orca_w_parser::tests::repeated_pool_keeps_each_amount_and_direction ... ok
+test parsers::raydium::tests::amm_v4_pool_creation_supports_current_19_account_layout ... ok
+test parsers::raydium::r_clmm_parser::tests::repeated_pool_uses_each_instructions_execution_event ... ok
+test helpers::txn_helper::tests::normalization_and_parser_preserve_cpi_parent_identity ... ok
+test parsers::pumpfun::pumpswap_parser::tests::missing_wrong_pool_and_ambiguous_results_are_skipped ... ok
+test parsers::pumpfun::pumpswap_parser::tests::buy_then_sell_does_not_mix_amounts_or_direction ... ok
+test parsers::raydium::tests::raydium_capture_adds_swaps_from_both_new_programs ... ignored, requires project capture.bin
+test parsers::raydium::tests::cpmm_liquidity_uses_executed_amounts_and_withdraw_is_already_net ... ok
+test parsers::raydium::tests::failed_pool_creation_cpi_does_not_become_a_pool_event ... ok
+test parsers::raydium::tests::initialization_routes_to_pool_events_without_execution_amounts ... ok
+test parsers::raydium::tests::missing_ambiguous_invalid_and_failed_execution_emit_nothing ... ok
+test parsers::raydium::tests::amm_v4_routes_executed_amounts_for_both_swap_modes_and_layouts ... ok
+test parsers::tests::resolve_rejects_invalid_account_references ... ok
+test pipeline::formatter::tests::empty_events_still_renders_the_header ... ok
+test pipeline::formatter::tests::fractional_route_percentages_are_preserved ... ok
+test pipeline::formatter::tests::known_mints_render_as_symbols ... ok
+test pipeline::formatter::tests::no_separators_in_amounts ... ok
+test pipeline::formatter::tests::launch_and_liquidity_details_are_not_lost ... ok
+test pipeline::formatter::tests::readable_output_separates_transactions_events_and_token_addresses ... ok
+test parsers::raydium::tests::cpmm_swaps_use_execution_and_token_transfer_fees ... ok
+test pipeline::formatter::tests::renders_ix_index_so_blocks_are_distinguishable ... ok
+test pipeline::formatter::tests::renders_route_when_present ... ok
+test pipeline::formatter::tests::scales_by_decimals ... ok
+test pipeline::formatter::tests::status_appears_in_the_header ... ok
+test parsers::raydium::tests::repeated_cpmm_calls_under_different_parents_keep_their_own_amounts ... ok
+test parsers::raydium::tests::cpmm_transfer_fee_overflow_and_mismatched_mints_are_rejected ... ok
+test pipeline::formatter::tests::unknown_tokens_keep_distinct_full_mints_and_exact_raw_amounts ... ok
+test pipeline::ingester::tests::already_requested_shutdown_does_not_accept_another_update ... ok
+test pipeline::ingester::tests::stream_error_stops_instead_of_silently_accepting_later_updates ... ok
+test pipeline::ingester::tests::finalized_notification_alone_cannot_create_a_checkpoint ... ok
+test pipeline::processer::tests::closed_writer_stops_processor_and_closes_input ... ok
+test pipeline::ingester::tests::shutdown_preserves_an_accepted_update_waiting_on_a_full_queue ... ok
+test pipeline::ingester::tests::shutdown_stops_an_idle_stream ... ok
+test pipeline::shutdown::tests::natural_eof_joins_all_workers_without_waiting_for_a_signal ... ok
+test pipeline::processer::tests::closing_input_drains_every_buffered_message_to_writer ... ok
+test resume::database_tests::checkpoint_and_data_are_atomic_and_gaps_cannot_advance ... ignored, requires TEST_DATABASE_URL pointing to a disposable PostgreSQL database
+test parsers::tests::resolve_preserves_individual_byte_indexes ... ok
+test resume::tests::filtered_block_count_is_not_the_whole_network_count ... ok
+test resume::tests::malformed_transactions_do_not_advance_tracker ... ok
+test store::batch_schema::tests::block_time_fills_all_event_tables_in_any_arrival_order ... ignored, requires TEST_DATABASE_URL pointing to a disposable PostgreSQL database
+test pipeline::shutdown::tests::signal_listener_error_stops_workers_and_returns_failure ... ok
+test pipeline::shutdown::tests::signal_joins_workers_after_their_queues_drain ... ok
+test pipeline::shutdown::tests::source_error_still_joins_downstream_workers ... ok
+test store::batch_schema::tests::dlq_payload_rejects_unknown_version ... ok
+test resume::tests::scope_and_retention_are_checked ... ok
+test resume::tests::tracked_successful_transactions_are_complete_and_duplicates_fail ... ok
+test store::batch_schema::tests::postgres_keeps_cpi_parents_distinct_on_replay ... ignored, requires a disposable CPI_TEST_DATABASE_URL database
+test parsers::raydium::tests::amm_v4_liquidity_supports_legacy_and_bounded_arguments ... ok
+test store::batch_schema::tests::postgres_preserves_full_unsigned_amount_range ... ignored, requires a disposable U64_TEST_DATABASE_URL database
+test pipeline::shutdown::tests::writer_panic_stops_idle_producer_and_is_reported ... ok
+test store::batch_schema::tests::trade_amounts_do_not_wrap_at_signed_integer_boundary ... ok
+test store::dlq::tests::classifies_connection_errors_as_transient ... ok
+test store::dlq::tests::classifies_sqlstates ... ok
+test store::dlq::tests::dlq_threshold ... ok
+test store::dlq::tests::replay_fails_when_any_batch_stays_pending ... ok
+test store::writer::tests::dlq_backoff_starts_at_400ms_and_caps_at_10s ... ok
+test store::writer::tests::dlq_insert_retry_backoff_escalates ... ok
+test store::batch_schema::tests::dlq_payload_round_trips ... ok
+test store::writer::tests::dlq_replay_slot_and_block_writes_are_insert_only ... ok
+test store::writer::tests::duplicate_account_rows_keep_newest_write_version ... ok
+test store::writer::tests::duplicate_block_rows_keep_last_hash ... ok
+test store::writer::tests::duplicate_slot_rows_keep_last_status ... ok
+test tests::replay_dlq_requires_literal_one ... ok
+test store::batch_schema::tests::dlq_rejects_legacy_payload_without_parent_identity ... ok
+test store::batch_schema::tests::dlq_rejects_previously_wrapped_negative_amounts ... ok
+test store::batch_schema::tests::dlq_preserves_full_unsigned_amount_range ... ok
+test store::writer::tests::empty_writer_shutdown_does_not_require_a_database_write ... ok
+test store::batch_schema::tests::dlq_preserves_cpi_parent_identity ... ok
+test pipeline::shutdown::tests::shutdown_waits_for_storage_instead_of_aborting_it ... ok
+
+test result: ok. 85 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+=== POSTGRESQL ACCEPTANCE: 04_replay.sh ===
+== 04 full capture replay ==
+PASS: capture replay: exit 0
+PASS: found 'REPLAY pass 1: 6207 updates from'
+PASS: found 'REPLAY pass 1 done: 6206 updates'
+PASS: found 'REPLAY complete'
+PASS: did not find 'moved to DLQ'
+PASS: did not find 'flush failed'
+PASS: did not find 'panicked'
+PASS: transactions count = 5969
+PASS: slots count = 66
+PASS: block_meta count = 34
+PASS: accounts count = 0
+PASS: swap_events count = 2471
+PASS: route_hops count = 211
+PASS: trade_events count = 255
+PASS: launch_events count = 5
+PASS: liquidity_events count = 1
+PASS: pool_events count = 0
+PASS: DLQ must be empty after a clean replay = 0
+PASS: migration success after replay = 1
+
+Stored rows:
+  accounts|0
+  block_meta|34
+  launch_events|5
+  liquidity_events|1
+  pool_events|0
+  route_hops|211
+  slots|66
+  swap_events|2471
+  trade_events|255
+  transactions|5969
+PASS: full capture replay
+PASS: offline replay never advances resume = 0
+
+=== POSTGRESQL ACCEPTANCE: 05_idempotency.sh ===
+== 05 replay idempotency ==
+PASS: second capture replay: exit 0
+PASS: did not find 'moved to DLQ'
+PASS: did not find 'flush failed'
+PASS: table counts are stable across replay
+PASS: transaction signature checksum = 63b75ee9626b37a8b3dbd951ce413c11
+PASS: slot table checksum = 2b024710f6b6671171a0ef1178269899
+PASS: DLQ still empty after second replay = 0
+PASS: replay idempotency
+
+=== POSTGRESQL ACCEPTANCE: 06_invariants.sh ===
+== 06 data invariants ==
+PASS: transactions with empty signature = 0
+PASS: negative transaction fees = 0
+PASS: non-positive transaction slots = 0
+PASS: transactions without a fee payer = 0
+PASS: failed transactions in the successful-only capture = 0
+PASS: slots with invalid status = 0
+PASS: non-positive slot numbers = 0
+PASS: slot parent not below child = 0
+PASS: block_meta with empty hashes = 0
+PASS: block_meta parent not below child = 0
+PASS: negative block transaction counts = 0
+PASS: swap rows with empty user/protocol = 0
+PASS: swap rows with negative amounts = 0
+PASS: duplicate swap primary keys = 0
+PASS: empty-mint swap rows with zero amount = 0
+PASS: route hops with percent outside 0..10000 = 0
+PASS: route hops with negative hop index = 0
+PASS: route hops with empty protocol = 0
+PASS: route hops with negative amounts = 0
+PASS: orphan route hops = 0
+PASS: trades with invalid side = 0
+PASS: trades with empty required strings = 0
+PASS: trades with negative token amounts = 0
+PASS: trades with negative quote amounts = 0
+PASS: launches with empty required strings = 0
+PASS: launches with non-positive timestamp = 0
+PASS: liquidity rows with invalid kind = 0
+PASS: liquidity rows with empty protocol/pool/user = 0
+PASS: liquidity rows with negative amounts = 0
+PASS: pool rows with empty required strings = 0
+PASS: no empty input/output mint fields
+PASS: orphan swap transactions = 0
+PASS: orphan trade transactions = 0
+PASS: orphan launch transactions = 0
+PASS: orphan liquidity transactions = 0
+PASS: orphan pool transactions = 0
+PASS: swap slot mismatches = 0
+PASS: trade slot mismatches = 0
+PASS: launch slot mismatches = 0
+PASS: liquidity slot mismatches = 0
+PASS: pool slot mismatches = 0
+PASS: transactions block times match available block metadata = 0
+PASS: swap_events block times match available block metadata = 0
+PASS: trade_events block times match available block metadata = 0
+PASS: launch_events block times match available block metadata = 0
+PASS: liquidity_events block times match available block metadata = 0
+PASS: pool_events block times match available block metadata = 0
+PASS: data invariants
+
+=== POSTGRESQL ACCEPTANCE: 07_dlq_replay.sh ===
+== 07 DLQ replay and failure handling ==
+PASS: valid DLQ replay: exit 0
+PASS: found 'DLQ replay complete'
+PASS: found '1 batch(es)'
+PASS: replayed synthetic slot exists = 1
+PASS: valid DLQ row marked replayed = 1
+PASS: invalid-version DLQ replay fails: exit 1
+PASS: found 'unsupported DLQ payload version'
+PASS: invalid DLQ row remains pending = 1
+PASS: invalid DLQ row records replay_error
+PASS: empty DLQ replay: exit 0
+PASS: found '0 batch(es)'
+PASS: REPLAY_DLQ=true does not enter DLQ mode: exit 0
+PASS: did not find 'DLQ replay complete'
+PASS: DLQ replay and failure handling
+
+=== POSTGRESQL ACCEPTANCE: 08_performance.sh ===
+== 08 replay performance smoke test ==
+PASS: performance replay: exit 0
+PASS: did not find 'moved to DLQ'
+PASS: replay completed in 2058 ms (guard 60000 ms)
+PASS: transactions count = 5969
+PASS: slots count = 66
+PASS: block_meta count = 34
+PASS: accounts count = 0
+PASS: swap_events count = 2471
+PASS: route_hops count = 211
+PASS: trade_events count = 255
+PASS: launch_events count = 5
+PASS: liquidity_events count = 1
+PASS: pool_events count = 0
+PASS: DLQ empty after performance replay = 0
+PASS: performance smoke test
+
+Results apply to the exercised fixtures. Capture record counts are not independent trades, exhaustive coverage, production throughput or an availability guarantee.
+The default acceptance harness also reports known issues/advisories; see docs/limitations.md.

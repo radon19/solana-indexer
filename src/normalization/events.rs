@@ -14,7 +14,6 @@ pub enum Event {
 // Jupiter / Raydium / Orca / Meteora / PumpSwap
 // --------------------------------------------------
 
-
 #[derive(Debug, Clone)]
 pub struct SwapEvent {
     pub signature: String,
@@ -22,7 +21,9 @@ pub struct SwapEvent {
 
     // which instruction produced this
     pub ix_index: u32,
-    pub inner: bool,      // true = reached through a CPI
+    /// Top-level parent of an inner call; None for top-level events.
+    pub parent_ix_index: Option<u32>,
+    pub inner: bool, // true = reached through a CPI
 
     pub user: String,
     pub protocol: Protocol,
@@ -62,9 +63,11 @@ pub struct TradeEvent {
     pub signature: String,
     pub slot: u64,
     pub ix_index: u32,
+    /// Top-level parent of an inner call; None for top-level events.
+    pub parent_ix_index: Option<u32>,
 
     pub user: String,
-pub inner: bool, 
+    pub inner: bool,
 
     pub protocol: Protocol,
 
@@ -107,6 +110,8 @@ pub struct LiquidityAddEvent {
     pub signature: String,
     pub slot: u64,
     pub ix_index: u32,
+    /// Top-level parent of an inner call; None for top-level events.
+    pub parent_ix_index: Option<u32>,
     pub inner: bool,
 
     pub user: String,
@@ -131,6 +136,8 @@ pub struct LiquidityRemoveEvent {
     pub signature: String,
     pub slot: u64,
     pub ix_index: u32,
+    /// Top-level parent of an inner call; None for top-level events.
+    pub parent_ix_index: Option<u32>,
     pub inner: bool,
 
     pub user: String,
@@ -155,6 +162,8 @@ pub struct PoolCreateEvent {
     pub signature: String,
     pub slot: u64,
     pub ix_index: u32,
+    /// Top-level parent of an inner call; None for top-level events.
+    pub parent_ix_index: Option<u32>,
     pub inner: bool,
 
     pub protocol: Protocol,
@@ -165,16 +174,14 @@ pub struct PoolCreateEvent {
     pub token_b_mint: String,
 }
 
-
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protocol {
     Jupiter,
 
-    // pump.fun ecosystem 
-    PumpSwap,      // PumpSwap AMM, where graduated coins trade
-    PumpFun,       // bonding curve, where coins are born and day-trade
-    PumpLaunch,    // the launch itself — LaunchEvent, Phase C
+    // pump.fun ecosystem
+    PumpSwap,   // PumpSwap AMM, where graduated coins trade
+    PumpFun,    // bonding curve, where coins are born and day-trade
+    PumpLaunch, // the launch itself — LaunchEvent, Phase C
 
     // Raydium
     Raydium,       // AMM v4 + CPMM
@@ -199,18 +206,18 @@ impl Protocol {
             Protocol::RaydiumLaunch => "Raydium LaunchLab",
             Protocol::Orca => "Orca",
             Protocol::Meteora => "Meteora",
-            Protocol::Unknown => "Unknown Protocol"
+            Protocol::Unknown => "Unknown Protocol",
         }
     }
 }
-
-
 
 #[derive(Debug, Clone)]
 pub struct LaunchEvent {
     pub signature: String,
     pub slot: u64,
     pub ix_index: u32,
+    /// Top-level parent of an inner call; None for top-level events.
+    pub parent_ix_index: Option<u32>,
     pub inner: bool,
     //time wrt to unix epoch
     pub timestamp_unix_ms: i64,

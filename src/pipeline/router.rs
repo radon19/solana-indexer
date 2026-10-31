@@ -2,7 +2,15 @@ use crate::{
     normalization::{
         events::Event,
         structs::{Instruction, Transaction},
-    }, parsers::{constants::Program, jupiter::jup_parser, meteora::{m_damm_two, m_dbc, m_dlmm}, orca::{self, orca_w_parser}, pumpfun::{pumpfun_parser, pumpswap_parser}, raydium},
+    },
+    parsers::{
+        constants::Program,
+        jupiter::jup_parser,
+        meteora::{m_damm_two, m_dbc, m_dlmm},
+        orca::{self, orca_w_parser},
+        pumpfun::{pumpfun_parser, pumpswap_parser},
+        raydium,
+    },
 };
 
 pub fn route(tx: &Transaction) -> Vec<Event> {
@@ -32,8 +40,9 @@ fn dispatch(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
     match program {
         Program::JupiterAggregatorV6 => jup_parser::parse(tx, ix, inner),
         Program::PumpSwapAmm => pumpswap_parser::parse(tx, ix, inner),
-        // A2 — pump.fun bonding curve, not written yet
         Program::PumpFunBondingCurve => pumpfun_parser::parse(tx, ix, inner),
+        Program::RaydiumAmmV4 => raydium::r_amm_v4_parser::parse(tx, ix, inner),
+        Program::RaydiumCpmm => raydium::r_cpmm_parser::parse(tx, ix, inner),
         Program::RaydiumClmm => raydium::r_clmm_parser::parse(tx, ix, inner),
         Program::OrcaWhirlpool => orca::orca_w_parser::parse(tx, ix, inner),
         Program::MeteoraDammV2 => m_damm_two::parse(tx, ix, inner),

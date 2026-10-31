@@ -55,6 +55,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -98,6 +99,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -141,6 +143,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -184,6 +187,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -226,6 +230,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -268,6 +273,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -309,6 +315,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
@@ -350,6 +357,7 @@ pub fn parse(tx: &Transaction, ix: &Instruction, inner: bool) -> Vec<Event> {
                 slot: tx.slot,
 
                 ix_index: ix.index,
+                parent_ix_index: ix.parent_index,
                 inner,
 
                 user,
